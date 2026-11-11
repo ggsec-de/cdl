@@ -1,0 +1,68 @@
+schema_version: 1
+id: "cortex.community:graphql-apiforwp-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Graphql apiforwp Detect"
+  description: "Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/dolevf/graphw00f/blob/main/graphw00f/lib.py"
+  tags: ["tech", "graphql", "wordpress", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "POST"
+      path: "/graphql"
+      headers: { "Content-Type": "application/json" }
+      body: "{\"query\":\"query aa#aa { __typename }\"}"
+  - id: "probe1"
+    request:
+      method: "POST"
+      path: "/api/graphql"
+      headers: { "Content-Type": "application/json" }
+      body: "{\"query\":\"query aa#aa { __typename }\"}"
+  - id: "probe2"
+    request:
+      method: "POST"
+      path: "/query"
+      headers: { "Content-Type": "application/json" }
+      body: "{\"query\":\"query aa#aa { __typename }\"}"
+  - id: "probe3"
+    request:
+      method: "POST"
+      path: "/"
+      headers: { "Content-Type": "application/json" }
+      body: "{\"query\":\"query aa#aa { __typename }\"}"
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+              - eq: { left: { ref: "steps.probe0.status" }, right: { value: 400 } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Unexpected token \"END\"" } }
+      - all:
+          - any:
+              - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+              - eq: { left: { ref: "steps.probe1.status" }, right: { value: 400 } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Unexpected token \"END\"" } }
+      - all:
+          - any:
+              - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+              - eq: { left: { ref: "steps.probe2.status" }, right: { value: 400 } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Unexpected token \"END\"" } }
+      - all:
+          - any:
+              - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }
+              - eq: { left: { ref: "steps.probe3.status" }, right: { value: 400 } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Unexpected token \"END\"" } }

@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:4d-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "4D Detection"
+  description: "4D technology was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://us.4d.com/"
+    - "https://doc.4d.com/4Dv18/4D/18.4/URLs-and-Form-Actions.300-5232844.en.html"
+    - "https://doc.4d.com/4Dv18/4D/18.4/Information-about-the-Web-Site.300-5232828.en.html"
+  tags: ["4D", "detect", "tech", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/4DACTION/" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/4DSTATS" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/4DHTMLSTATS" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/4DCACHECLEAR" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/4DWEBTEST" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

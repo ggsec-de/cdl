@@ -1,0 +1,182 @@
+schema_version: 1
+id: "cortex.community:joomla-fpd"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Joomla! - Full Path Disclosure"
+  description: "Detects full path disclosure in Joomla! sending requests to specific paths and identifying fatal error stack traces that leaked absolute filesystem paths. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://developer.joomla.org/security-centre/884-20220801-core-multiple-full-path-disclosures-because-of-missing-jexec-or-die-check.html"
+  tags: ["joomla", "misconfiguration", "fpd", "disclosure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/administrator/manifests/files/joomla.xml" }
+  - id: "probe1"
+    request: { method: "GET", path: "/language/en-GB/en-GB.xml" }
+  - id: "probe2"
+    request: { method: "GET", path: "/README.txt" }
+  - id: "probe3"
+    request: { method: "GET", path: "/modules/custom.xml" }
+  - id: "probe4"
+    request: { method: "GET", path: "/" }
+  - id: "probe5"
+    request: { method: "GET", path: "/libraries/phputf8/utils/bad.php" }
+  - id: "probe6"
+    request: { method: "GET", path: "/libraries/php-inputfilter/inputfilter.php" }
+  - id: "probe7"
+    request: { method: "GET", path: "/libraries/php-fileupload/fileupload.php" }
+  - id: "probe8"
+    request: { method: "GET", path: "/libraries/joomla/filesystem/archive/archive.php" }
+  - id: "probe9"
+    request: { method: "GET", path: "/libraries/joomla/filesystem/archive/tar.php" }
+  - id: "probe10"
+    request: { method: "GET", path: "/libraries/joomla/filesystem/archive/zip.php" }
+  - id: "probe11"
+    request: { method: "GET", path: "/libraries/phpmailer/phpmailer.php" }
+  - id: "probe12"
+    request: { method: "GET", path: "/libraries/phputf8/utils/unicode.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - any:
+              - all:
+                  - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<version>" } }
+                  - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<creationDate>" } }
+                  - contains: { left: { ref: "steps.probe0.body" }, right: { value: "</metafile>" } }
+              - any:
+                  - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)" } }
+                  - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)<meta\\s+name=[\"']generator[\"']\\s+content=[\"']\\s*joomla[^\"']*" } }
+                  - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)Joomla_([\\d.|\\d]+)_version_history" } }
+                  - regex: { left: { ref: "steps.probe0.body" }, right: { value: "FILES_JOOMLA_XML_DESCRIPTION" } }
+          - any:
+              - all:
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<version>" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<creationDate>" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "</metafile>" } }
+              - any:
+                  - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)" } }
+                  - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)<meta\\s+name=[\"']generator[\"']\\s+content=[\"']\\s*joomla[^\"']*" } }
+                  - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)Joomla_([\\d.|\\d]+)_version_history" } }
+                  - regex: { left: { ref: "steps.probe1.body" }, right: { value: "FILES_JOOMLA_XML_DESCRIPTION" } }
+          - any:
+              - all:
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<version>" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<creationDate>" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "</metafile>" } }
+              - any:
+                  - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)" } }
+                  - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)<meta\\s+name=[\"']generator[\"']\\s+content=[\"']\\s*joomla[^\"']*" } }
+                  - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)Joomla_([\\d.|\\d]+)_version_history" } }
+                  - regex: { left: { ref: "steps.probe2.body" }, right: { value: "FILES_JOOMLA_XML_DESCRIPTION" } }
+          - any:
+              - all:
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<version>" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<creationDate>" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "</metafile>" } }
+              - any:
+                  - regex: { left: { ref: "steps.probe3.body" }, right: { value: "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)" } }
+                  - regex: { left: { ref: "steps.probe3.body" }, right: { value: "(?i)<meta\\s+name=[\"']generator[\"']\\s+content=[\"']\\s*joomla[^\"']*" } }
+                  - regex: { left: { ref: "steps.probe3.body" }, right: { value: "(?i)Joomla_([\\d.|\\d]+)_version_history" } }
+                  - regex: { left: { ref: "steps.probe3.body" }, right: { value: "FILES_JOOMLA_XML_DESCRIPTION" } }
+          - any:
+              - all:
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "<version>" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "<creationDate>" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "</metafile>" } }
+              - any:
+                  - regex: { left: { ref: "steps.probe4.body" }, right: { value: "(?:<div[^>]+id=\"wrapper_r\"|<(?:link|script)[^>]+(?:feed|components)/com_|<table[^>]+class=\"pill)" } }
+                  - regex: { left: { ref: "steps.probe4.body" }, right: { value: "(?i)<meta\\s+name=[\"']generator[\"']\\s+content=[\"']\\s*joomla[^\"']*" } }
+                  - regex: { left: { ref: "steps.probe4.body" }, right: { value: "(?i)Joomla_([\\d.|\\d]+)_version_history" } }
+                  - regex: { left: { ref: "steps.probe4.body" }, right: { value: "FILES_JOOMLA_XML_DESCRIPTION" } }
+      - any:
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe5.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe6.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe6.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe6.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe6.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe6.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe6.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe6.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe7.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe7.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe7.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe7.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe7.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe7.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe7.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe8.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe8.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe8.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe8.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe8.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe8.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe8.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe9.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe9.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe9.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe9.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe9.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe9.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe9.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe10.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe10.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe10.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe10.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe10.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe10.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe10.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe11.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe11.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe11.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe11.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe11.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe11.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe11.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }
+          - all:
+              - any:
+                  - regex: { left: { ref: "steps.probe12.body" }, right: { value: "(?i)in\\s+/.*\\.php\\s+on\\s+line\\s+\\d+" } }
+                  - regex: { left: { ref: "steps.probe12.body" }, right: { value: "(?i)fatal\\s+error" } }
+                  - regex: { left: { ref: "steps.probe12.body" }, right: { value: "(?i)warning" } }
+                  - regex: { left: { ref: "steps.probe12.body" }, right: { value: "(?i)notice" } }
+              - eq: { left: { ref: "steps.probe12.status" }, right: { value: 200 } }
+              - any:
+                  - regex: { left: { ref: "steps.probe12.body" }, right: { value: "(/[^\\s:]+/joomla[^\\s:]*)" } }
+                  - regex: { left: { ref: "steps.probe12.body" }, right: { value: "(/[^\\s:]+/libraries[^\\s:]*)" } }

@@ -1,0 +1,52 @@
+schema_version: 1
+id: "cortex.community:aem-acs-common"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Adobe AEM ACS Common Exposure"
+  description: "Adobe AEM ACS Common pages exposed. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/Web-Content/aem2.txt"
+  tags: ["misconfig", "aem", "adobe", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/etc/acs-commons/jcr-compare.html" }
+  - id: "probe1"
+    request: { method: "GET", path: "/etc/acs-commons/workflow-remover.html" }
+  - id: "probe2"
+    request: { method: "GET", path: "/etc/acs-commons/version-compare.html" }
+  - id: "probe3"
+    request: { method: "GET", path: "/etc/acs-commons/oak-index-manager.html" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Version Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Oak Index Manager | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>JCR Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Workflow Remover | ACS AEM Commons</title>" } }
+      - any:
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Version Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Oak Index Manager | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>JCR Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Workflow Remover | ACS AEM Commons</title>" } }
+      - any:
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<title>Version Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<title>Oak Index Manager | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<title>JCR Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<title>Workflow Remover | ACS AEM Commons</title>" } }
+      - any:
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<title>Version Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<title>Oak Index Manager | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<title>JCR Compare | ACS AEM Commons</title>" } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<title>Workflow Remover | ACS AEM Commons</title>" } }

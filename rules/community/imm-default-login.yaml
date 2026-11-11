@@ -1,0 +1,38 @@
+schema_version: 1
+id: "cortex.community:imm-default-login"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Integrated Management Module - Default Login"
+  description: "Integrated Management Module default login credentials were discovered. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://pubs.lenovo.com/x3650-m4/t_logging_web_interface"
+    - "https://www.ibm.com/docs/en/tcs-service?topic=oip-logging-imm-web-interface"
+  cwes: [798]
+  tags: ["imm", "ibm", "default-login", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "POST"
+      path: "/data/login"
+      body: "user=USERID&password=PASSW0RD"
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<authResult>0</authResult>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "authResult\":\"0" } }
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "index-console.php" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "home.php" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

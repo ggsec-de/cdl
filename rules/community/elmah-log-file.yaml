@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:elmah-log-file"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "ELMAH Exposure"
+  description: "ELMAH (Error Logging Modules and Handlers) is an application-wide error logging facility that is completely pluggable. It can be dynamically added to a running ASP.NET web application, or even all ASP.NET web applications on a machine, without any need for re-compilation or re-deployment. In some cases, the logs expose ASPXAUTH cookies allowing to hijack a logged in administrator session. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://code.google.com/archive/p/elmah/"
+    - "https://www.troyhunt.com/aspnet-session-hijacking-with-google/"
+  tags: ["logs", "elmah", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/elmah" }
+  - id: "probe1"
+    request: { method: "GET", path: "/elmah.axd" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Error Log for" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Error Log for" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

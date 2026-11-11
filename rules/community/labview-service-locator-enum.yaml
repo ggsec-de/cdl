@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:labview-service-locator-enum"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "LabVIEW/NI Service Locator"
+  description: "National Instruments (LabVIEW) Service Locator detected and enumerated. This services leaks a list of all services provided by the device, hardware capabilities and possibly versions. These hardware devices should not be exposed to the internet. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://forums.ni.com/t5/LabVIEW/Get-list-of-services-from-NI-service-locator/td-p/3850515"
+    - "https://www.ni.com/en/support/security/configuring-software-and-hardware-firewalls-to-support-national-.html"
+  tags: ["detect", "labview", "panel", "enumeration", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/dumpinfo" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Service Locator URL Mappings" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "National Instruments" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:unauth-spark-api"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Unauthenticated Spark REST API"
+  description: "The Spark product's REST API interface allows access to unauthenticated users. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://xz.aliyun.com/t/2490"
+  cwes: [77]
+  tags: ["spark", "unauth", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/v1/submissions" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 400 } }
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Missing an action" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "serverSparkVersion" } }

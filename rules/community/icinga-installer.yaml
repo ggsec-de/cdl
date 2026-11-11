@@ -1,0 +1,39 @@
+schema_version: 1
+id: "cortex.community:icinga-installer"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Icinga Web 2 Installer Exposure"
+  description: "Icinga Web 2 installer/setup wizard is publicly accessible. The setup page at /icingaweb2/setup exposes the configuration wizard which guides through full application configuration including database credentials, authentication backends, and admin account creation. While a setup token is required to proceed, the exposure of the installer itself is a serious misconfiguration that signals an incomplete or improperly secured installation. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://icinga.com/docs/icinga-web/latest/doc/02-Installation/"
+  cwes: [200]
+  tags: ["icinga", "exposure", "misconfig", "installer", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/icingaweb2/setup" }
+  - id: "probe1"
+    request: { method: "GET", path: "/setup" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Welcome to the configuration of Icinga Web 2" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Setup Token" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Welcome to the configuration of Icinga Web 2" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Setup Token" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

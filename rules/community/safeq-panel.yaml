@@ -1,0 +1,39 @@
+schema_version: 1
+id: "cortex.community:safeq-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "YSoft SafeQ Panel - Detect"
+  description: "The YSoft SafeQ panel is umbrella printer management software used by many printer vendors. This should not be exposed to the public internet. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.ysoft.com/safeq"
+    - "https://1617882505.rsc.cdn77.org/YSoft_SAFEQ_Cloud_documentation.pdf"
+  tags: ["panel", "ysoft", "login", "safeq", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "YSoft SafeQ" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Y Soft Corporation, a.s." } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "YSoft SafeQ" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Y Soft Corporation, a.s." } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

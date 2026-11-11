@@ -1,0 +1,43 @@
+schema_version: 1
+id: "cortex.community:office-webapps-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Office Web Apps Server Panel - Detect"
+  description: "Microsoft Office Web App Login Panel was discovered. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.microsoft.com/en-in/microsoft-365/free-office-online-for-the-web"
+  cwes: [668]
+  tags: ["panel", "office-webapps", "login", "microsoft", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/op/generate.aspx" }
+  - id: "probe1"
+    request: { method: "GET", path: "/op/wrongfiletype.htm" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Provide a link that opens Word" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "PowerPoint files in a web browser" } }
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "_OFUError" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Wrong file type" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Provide a link that opens Word" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "PowerPoint files in a web browser" } }
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "_OFUError" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Wrong file type" } }

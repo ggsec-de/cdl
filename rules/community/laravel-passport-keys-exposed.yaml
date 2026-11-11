@@ -1,0 +1,46 @@
+schema_version: 1
+id: "cortex.community:laravel-passport-keys-exposed"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Laravel Passport - OAuth2 Keys Exposed"
+  description: "Laravel Passport OAuth2 RSA private or public keys are publicly accessible at default storage paths. Exposed private keys allow attackers to forge OAuth2 access tokens and impersonate any user. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://laravel.com/docs/10.x/passport#installation"
+  tags: ["laravel", "passport", "oauth", "exposure", "keys", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/storage/oauth-private.key" }
+  - id: "probe1"
+    request: { method: "GET", path: "/storage/oauth-public.key" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "-----BEGIN RSA PRIVATE KEY-----" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "-----BEGIN PUBLIC KEY-----" } }
+          - not:
+              any:
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<html" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<!DOCTYPE" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "-----BEGIN RSA PRIVATE KEY-----" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "-----BEGIN PUBLIC KEY-----" } }
+          - not:
+              any:
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<html" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<!DOCTYPE" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

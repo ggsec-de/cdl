@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:selenium-exposure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Selenium - Node Exposure"
+  description: "Selenium was shown to have an exposed node. If a Selenium node is exposed without any form of authentication, remote command execution could be possible if chromium is configured. By default the port is 4444, still, most of the internet facing are done through reverse proxies. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://nutcrackerssecurity.github.io/selenium.html"
+    - "https://labs.detectify.com/2017/10/06/guest-blog-dont-leave-your-grid-wide-open/"
+  tags: ["misconfig", "selenium", "misconfiguration", "rce", "chromium", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wd/hub" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "WebDriverRequest" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>WebDriver Hub</title>" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

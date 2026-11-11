@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:deimos-c2"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Deimos C2 - Detect"
+  description: "DeimosC2 is a post-exploitation Command & Control (C2) tool that leverages multiple communication methods in order to control machines that have been compromised. DeimosC2 server and agents works on, and has been tested on, Windows, Darwin, and Linux.It is entirely written in Golang with a front end written in Vue.js. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://twitter.com/MichalKoczwara/status/1551632627387473920"
+  tags: ["c2", "ir", "osint", "deimosc2", "panel", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Deimos C2</title>" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

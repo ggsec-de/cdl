@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:openai-plugin"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "OpenAI Plugin Detection"
+  description: "OpenAI plugins connect ChatGPT to third-party applications. These plugins enable ChatGPT to interact with APIs defined by developers, enhancing ChatGPT's capabilities and allowing it to perform a wide range of actions. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://platform.openai.com/docs/plugins/introduction"
+  tags: ["tech", "openai", "plugin", "discovery", "ai", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/.well-known/ai-plugin.json" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"schema_version\":" } }
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"name_for_model\":" } }

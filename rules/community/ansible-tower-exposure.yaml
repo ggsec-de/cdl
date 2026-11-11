@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:ansible-tower-exposure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Ansible Tower - Detect"
+  description: "Ansible Tower was detected. Ansible Tower is a commercial offering that helps teams manage complex multi-tier deployments by adding control, knowledge, and delegation to Ansible-powered environments. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://docs.ansible.com/ansible-tower/3.8.4/html/administration/"
+    - "https://docs.ansible.com/ansible-tower/latest/html/release-notes/index.html"
+  cwes: [200]
+  tags: ["panel", "ansible", "redhat", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Ansible Tower</title>" } }
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "ansible-bootstrap" } }

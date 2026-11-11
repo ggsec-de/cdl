@@ -1,0 +1,148 @@
+schema_version: 1
+id: "cortex.community:vbulletin-path-disclosure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "vBulletin - Full Path Disclosure"
+  description: "Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/OWASP/vbscan/blob/master/modules/pathdisclure.pl"
+  tags: ["config", "exposure", "fpd", "vbulletin", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/forumdisplay.php?do[]=[test.dll]" }
+  - id: "probe2"
+    request: { method: "GET", path: "/calendar.php?do[]=[test.dll]" }
+  - id: "probe3"
+    request: { method: "GET", path: "/search.php?do[]=[test.dll]" }
+  - id: "probe4"
+    request: { method: "GET", path: "/forumrunner/include/album.php" }
+  - id: "probe5"
+    request: { method: "GET", path: "/core/vb5/route/channel.php" }
+  - id: "probe6"
+    request: { method: "GET", path: "/core/vb5/route/conversation.php" }
+  - id: "probe7"
+    request: { method: "GET", path: "/includes/api/interface/noncollapsed.php" }
+  - id: "probe8"
+    request: { method: "GET", path: "/includes/api/interface/collapsed.php" }
+  - id: "probe9"
+    request: { method: "GET", path: "/vbseo_sitemap/addons/vbseo_sm_vba.php" }
+  - id: "probe10"
+    request: { method: "GET", path: "/vbseo_sitemap/addons/vbseo_sm_vba_links.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "vBulletin" } }
+      - any:
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe4.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe5.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe5.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe5.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe5.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe5.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe5.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe6.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe6.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe6.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe6.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe6.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe6.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe6.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe6.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe7.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe7.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe7.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe7.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe7.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe7.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe7.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe7.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe8.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe8.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe8.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe8.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe8.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe8.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe8.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe8.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe9.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe9.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe9.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe9.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe9.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe9.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe9.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe9.status" }, right: { value: 200 } }
+          - all:
+              - any:
+                  - contains: { left: { ref: "steps.probe10.body" }, right: { value: "<strong>Warning</strong>:" } }
+                  - contains: { left: { ref: "steps.probe10.body" }, right: { value: "Cannot modify header information" } }
+                  - contains: { left: { ref: "steps.probe10.body" }, right: { value: "/strong> on line" } }
+                  - contains: { left: { ref: "steps.probe10.body" }, right: { value: "trim() expects parameter" } }
+                  - contains: { left: { ref: "steps.probe10.body" }, right: { value: "class_core.php" } }
+                  - contains: { left: { ref: "steps.probe10.body" }, right: { value: "header already sent" } }
+                  - contains: { left: { ref: "steps.probe10.body" }, right: { value: "Fatal error" } }
+              - eq: { left: { ref: "steps.probe10.status" }, right: { value: 200 } }

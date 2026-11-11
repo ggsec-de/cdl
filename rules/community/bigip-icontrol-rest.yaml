@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:bigip-icontrol-rest"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "F5 BIG-IP iControl REST Panel - Detect"
+  description: "F5 BIG-IP iControl REST API discovered and may be vulnerable to an authentication bypass (not tested). Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://nvd.nist.gov/vuln/detail/CVE-2022-1388"
+    - "https://support.f5.com/csp/article/K23605346"
+    - "https://clouddocs.f5.com/products/big-iq/mgmt-api/v5.4/ApiReferences/bigiq_api_ref/r_auth_login.html"
+  cwes: [200]
+  tags: ["panel", "bigip", "f5", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/mgmt/shared/authn/login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "resterrorresponse" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 401 } }

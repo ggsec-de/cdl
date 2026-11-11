@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:typo3-composer"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Typo3 composer.json Exposure"
+  description: "The web application is based on Typo3 CMS. A sensitive file has been found. Access to such files must be restricted, as it may lead to disclosure of sensitive information about the web application. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/9.0/Breaking-83302-ComposerRestrictsInstallationOfTypo3cms.html"
+  tags: ["typo3", "cms", "exposure", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/typo3/sysext/install/composer.json" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "The Install Tool mounted as the module Tools>Install in TYPO3." } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "typo3-cms-framework" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

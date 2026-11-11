@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:fortra-filecatalyst-anonymous-access"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Fortra FileCatalyst - Anonymous Access"
+  description: "Detects Fortra FileCatalyst web interfaces that allow anonymous or guest access. FileCatalyst is a managed file transfer solution, and anonymous access to its portal can expose sensitive files and configuration if not properly secured. This template checks for publicly accessible instances with guest or unauthenticated user functionality. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.fortra.com/products/filecatalyst"
+    - "https://www.fortra.com/products/filecatalyst/resources/security-best-practices"
+  tags: ["filecatalyst", "fortra", "anonymous", "exposure", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/workflow/jsp/downloadFiles.jsp" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "</i>Guest" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Logout</a>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "FileCatalyst" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

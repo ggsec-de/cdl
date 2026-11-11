@@ -1,0 +1,27 @@
+schema_version: 1
+id: "cortex.community:barracuda-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Barracuda SSL VPN Log In"
+  description: "The Barracuda SSL VPN is an integrated hardware and software solution enabling secure, clientless remote access to internal network resources from any web browser. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  cwes: [200]
+  tags: ["barracuda", "panel", "vpn", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/default/showLogon.do" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Barracuda SSL VPN" } }

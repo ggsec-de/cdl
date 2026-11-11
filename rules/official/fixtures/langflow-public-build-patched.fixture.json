@@ -1,0 +1,11 @@
+{
+  "_comment": "Negative fixture for `rules test`: the FIXED build (Langflow >= 1.9.0 drops the `data` parameter) still answers the version endpoint and still runs a build, but the supplied node code is never compiled — the events carry a plain build log with neither the engine nonce nor any command output, so the rule must stay NoMatch instead of reporting execution.",
+  "responses": [
+    { "method": "GET", "path": "/api/v1/version", "status": 200, "body": "{\"version\":\"1.9.0\",\"main_version\":\"1.9.0\",\"package\":\"Langflow\"}" },
+    { "method": "POST", "path": "/api/v1/build_public_tmp/e8b4f8c2-7a1d-4e5f-9b3c-2a6d8f0e1b4a/flow", "bodyContains": "CortexControl", "status": 200, "body": "{\"job_id\":\"aaaaaaaa-1111-4111-8111-111111111111\"}" },
+    { "method": "POST", "path": "/api/v1/build_public_tmp/e8b4f8c2-7a1d-4e5f-9b3c-2a6d8f0e1b4a/flow", "bodyContains": "CortexProbe", "status": 200, "body": "{\"job_id\":\"bbbbbbbb-2222-4222-8222-222222222222\"}" },
+    { "method": "GET", "pathContains": "aaaaaaaa-1111-4111-8111-111111111111", "status": 200, "body": "{\"event\":\"error\",\"data\":{\"text\":\"Output Custom Component does not have a method\\n\"}}" },
+    { "method": "GET", "pathContains": "bbbbbbbb-2222-4222-8222-222222222222", "status": 200, "body": "{\"event\":\"end\",\"data\":{\"text\":\"Build complete\"}}" }
+  ],
+  "default": { "status": 404, "body": "{\"detail\":\"Not Found\"}" }
+}

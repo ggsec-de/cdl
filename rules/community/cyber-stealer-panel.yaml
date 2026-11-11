@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:cyber-stealer-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Cyber Stealer C2 Panel - Detect"
+  description: "Cyber Stealer C2 Login Panel was discovered. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://x.com/solostalking/status/1947143367336534254"
+  tags: ["c2", "cyber-stealer", "stealer", "panel", "login", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/webpanel/panel/login.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Cyber Stealer - Secure Access" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

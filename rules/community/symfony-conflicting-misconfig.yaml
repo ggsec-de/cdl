@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:symfony-conflicting-misconfig"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Symfony Conflicting Headers - Information Disclosure"
+  description: "A misconfiguration in Symfony’s trusted proxy and header settings could trigger a ConflictingHeadersException when both Forwarded and X-Forwarded-* headers were present. When debug mode was enabled in production, this issue could have exposed sensitive environment details such as SMTP credentials, application paths, or system configuration. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://symfony.com/doc/current/deployment/proxies.html"
+    - "https://owasp.org/Top10/A05_2021-Security_Misconfiguration/"
+  tags: ["misconfig", "symfony", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "GET"
+      path: "/"
+      headers: { "Forwarded": "for=127.0.0.1;host=oast.me", "X-Forwarded-Host": "oast.me" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Symfony\\Component\\HttpFoundation\\Exception\\ConflictingHeadersException" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 500 } }

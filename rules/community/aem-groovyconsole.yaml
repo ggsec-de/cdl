@@ -1,0 +1,47 @@
+schema_version: 1
+id: "cortex.community:aem-groovyconsole"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "AEM Groovy Console Discovery"
+  description: "An Adobe Experience Manager Groovy console was discovered. This can possibly lead to remote code execution. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://hackerone.com/reports/672243"
+    - "https://twitter.com/XHackerx007/status/1435139576314671105"
+  tags: ["aem", "adobe", "hackerone", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "GET"
+      path: "/groovyconsole"
+      headers: { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9", "Accept-Language": "en-US,en;q=0.9,hi;q=0.8" }
+  - id: "probe1"
+    request:
+      method: "GET"
+      path: "/etc/groovyconsole.html"
+      headers: { "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9", "Accept-Language": "en-US,en;q=0.9,hi;q=0.8" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Groovy Console</title>" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Run Script" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Groovy Web Console" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Groovy Console</title>" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Run Script" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Groovy Web Console" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

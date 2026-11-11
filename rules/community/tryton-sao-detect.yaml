@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:tryton-sao-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Tryton SAO - Detect"
+  description: "Tryton SAO is the web client for the Tryton business management platform. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.tryton.org/"
+    - "https://github.com/tryton/sao"
+  tags: ["tech", "tryton", "sao", "erp", "detect", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Tryton</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "dist/tryton-sao.min.js" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "images/tryton-icon.png" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

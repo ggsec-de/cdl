@@ -1,0 +1,10 @@
+{
+  "_comment": "Offline fixture for `rules test`: the cores API lists the demo core, the clean dump returns plain JSON (no file content), the Config-API write is accepted, and stream.url=file:///etc/passwd returns a /etc/passwd-shaped body. The probe route is matched first by its stream.url query.",
+  "responses": [
+    { "method": "GET", "path": "/solr/admin/cores", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"QTime\":1},\"initFailures\":{},\"status\":{\"demo\":{\"name\":\"demo\"}}}" },
+    { "method": "GET", "pathContains": "stream.url=file", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"handler\":\"org.apache.solr.handler.DumpRequestHandler\"},\"stream.ContentType\":\"text/plain;charset=utf-8\",\"stream.url\":\"file:///etc/passwd\",\"params\":{\"stream.url\":\"file:///etc/passwd\"},\"context\":{\"webapp\":\"/solr\",\"path\":\"/debug/dump\"},\"streams\":[\"root:x:0:0:root:/root:/bin/bash\\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\\n\"]}" },
+    { "method": "GET", "path": "/solr/demo/debug/dump", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"handler\":\"org.apache.solr.handler.DumpRequestHandler\"},\"params\":{\"param\":\"ContentStreams\"},\"context\":{\"webapp\":\"/solr\",\"path\":\"/debug/dump\"}}" },
+    { "method": "POST", "path": "/solr/demo/config", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"QTime\":12}}" }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

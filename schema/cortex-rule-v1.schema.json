@@ -1,0 +1,340 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ggsec.de/schemas/cortex-rule-v1.schema.json",
+  "title": "CDL v1 — Cortex Detection Language rule",
+  "description": "Structural schema for a single CDL rule, intended for editor validation and autocompletion. It checks field names, types and enumerations. The rule engine additionally checks semantics this schema cannot express (references resolve, step order, request budgets, declared capabilities, proof and side-effect agreement) - run `rules validate` for the authoritative result.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "rule_version", "requires", "info", "finding", "execution", "steps", "proof"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*:[a-z0-9][a-z0-9._-]*$" },
+    "rule_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine_api", "capabilities"],
+      "properties": {
+        "engine_api": { "const": 1 },
+        "capabilities": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "info": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "remediation"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "references": { "type": "array", "items": { "type": "string" } },
+        "cves": { "type": "array", "items": { "type": "string" } },
+        "cwes": { "type": "array", "items": { "type": "integer" } },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "remediation": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sink_type", "impact", "severity", "root_cause"],
+      "properties": {
+        "sink_type": { "type": "string", "minLength": 1 },
+        "impact": {
+          "enum": ["RCE", "FILE_READ", "PRIV_ESC", "AUTH_BYPASS", "SESSION_THEFT",
+                   "INFORMATION_DISCLOSURE", "EMAIL_ABUSE", "DOS", "WEAK_TOKEN",
+                   "MITM_RISK", "FINANCIAL_INTEGRITY", "CREDENTIAL_COMPROMISE", "NONE"]
+        },
+        "severity": { "enum": ["Info", "Low", "Medium", "High", "Critical"] },
+        "cvss_vector": { "type": "string" },
+        "root_cause": { "type": "string", "minLength": 1 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auth", "side_effects", "transport"],
+      "properties": {
+        "auth": { "enum": ["anonymous", "current", "guest", "admin"] },
+        "side_effects": { "enum": ["read_only", "state_change", "remote_command", "oob"] },
+        "transport": { "enum": ["http"] },
+        "max_requests": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 60 }
+      }
+    },
+    "variables": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/variable" }
+    },
+    "preconditions": { "$ref": "#/$defs/condition" },
+    "discovery": { "type": "array", "items": { "$ref": "#/$defs/step" } },
+    "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/step" } },
+    "proof": { "$ref": "#/$defs/proof" },
+    "cleanup": { "type": "array", "items": { "$ref": "#/$defs/step" } }
+  },
+  "$defs": {
+    "variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["value"] },
+        { "required": ["generator"] }
+      ],
+      "properties": {
+        "value": {},
+        "generator": { "enum": ["nonce", "uuid", "random_int"] },
+        "bytes": { "type": "integer", "minimum": 8, "maximum": 32 },
+        "min": { "type": "integer" },
+        "max": { "type": "integer" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "oneOf": [
+        { "required": ["request"], "not": { "required": ["variants"] } },
+        { "required": ["variants"], "not": { "required": ["request"] } }
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+        "when": { "$ref": "#/$defs/condition" },
+        "request": { "$ref": "#/$defs/request" },
+        "variants": { "type": "array", "items": { "$ref": "#/$defs/request" }, "minItems": 1 },
+        "expect": { "$ref": "#/$defs/condition" },
+        "extract": { "type": "object", "additionalProperties": { "$ref": "#/$defs/extractor" } },
+        "repeat": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_attempts"],
+          "properties": {
+            "max_attempts": { "type": "integer", "minimum": 1, "maximum": 5 },
+            "delay_ms": { "type": "integer", "minimum": 0, "maximum": 60000 },
+            "until": { "$ref": "#/$defs/condition" }
+          }
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "path"],
+      "not": { "required": ["body", "json_body"] },
+      "properties": {
+        "method": { "enum": ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] },
+        "path": { "type": "string", "pattern": "^/" },
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "body": { "type": "string" },
+        "json_body": {},
+        "redirects": {
+          "oneOf": [
+            { "const": "none" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["same_origin"],
+              "properties": {
+                "same_origin": { "const": true },
+                "max": { "type": "integer", "minimum": 1, "maximum": 4 }
+              }
+            }
+          ]
+        },
+        "path_mode": { "enum": ["standard", "preserve_raw"] }
+      }
+    },
+    "extractor": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["regex"] },
+        { "required": ["json_pointer"] },
+        { "required": ["header"] }
+      ],
+      "properties": {
+        "regex": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "pattern", "group"],
+          "properties": {
+            "from": { "type": "string" },
+            "pattern": { "type": "string" },
+            "group": { "type": "string" },
+            "required": { "type": "boolean" },
+            "cardinality": { "enum": ["exactly_one", "first"] }
+          }
+        },
+        "json_pointer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "pointer"],
+          "properties": {
+            "from": { "type": "string" },
+            "pointer": { "type": "string", "pattern": "^(/([^/~]|~0|~1)*)*$" },
+            "required": { "type": "boolean" }
+          }
+        },
+        "header": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "name"],
+          "properties": {
+            "from": { "type": "string" },
+            "name": { "type": "string" },
+            "required": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "operand": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [ { "required": ["ref"] }, { "required": ["value"] } ],
+      "properties": {
+        "ref": { "type": "string" },
+        "value": {}
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "properties": {
+        "all": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "any": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "not": { "$ref": "#/$defs/condition" },
+        "eq": { "$ref": "#/$defs/binop" },
+        "ne": { "$ref": "#/$defs/binop" },
+        "gt": { "$ref": "#/$defs/binop" },
+        "gte": { "$ref": "#/$defs/binop" },
+        "lt": { "$ref": "#/$defs/binop" },
+        "lte": { "$ref": "#/$defs/binop" },
+        "in": { "$ref": "#/$defs/binop" },
+        "contains": { "$ref": "#/$defs/matchop" },
+        "regex": { "$ref": "#/$defs/matchop" },
+        "exists": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref"],
+          "properties": { "ref": { "type": "string" } }
+        }
+      }
+    },
+    "binop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "right"],
+      "properties": {
+        "left": { "$ref": "#/$defs/operand" },
+        "right": { "$ref": "#/$defs/operand" }
+      }
+    },
+    "matchop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "right"],
+      "properties": {
+        "left": { "$ref": "#/$defs/operand" },
+        "right": { "$ref": "#/$defs/operand" },
+        "ignore_case": { "type": "boolean" }
+      }
+    },
+    "proof": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["signal.v1", "file_read_differential.v1", "expression_evaluation.v1",
+                   "command_output_readback.v1", "oob_interaction.v1"]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "signal.v1" } } },
+          "then": {
+            "additionalProperties": false,
+            "required": ["kind", "assertions"],
+            "properties": { "kind": {}, "assertions": { "$ref": "#/$defs/condition" } }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "file_read_differential.v1" } } },
+          "then": {
+            "additionalProperties": false,
+            "required": ["kind", "baseline", "probe", "marker"],
+            "properties": {
+              "kind": {},
+              "baseline": { "$ref": "#/$defs/stepref" },
+              "probe": {
+                "oneOf": [
+                  { "$ref": "#/$defs/stepref" },
+                  { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/stepref" } }
+                ]
+              },
+              "marker": { "type": "object", "additionalProperties": false, "required": ["regex"], "properties": { "regex": { "type": "string" } } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "expression_evaluation.v1" } } },
+          "then": {
+            "additionalProperties": false,
+            "required": ["kind", "challenge", "readback", "control"],
+            "properties": {
+              "kind": {},
+              "challenge": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "integer_product" } } },
+              "readback": { "$ref": "#/$defs/readbackref" },
+              "control": { "$ref": "#/$defs/stepref" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "command_output_readback.v1" } } },
+          "then": {
+            "additionalProperties": false,
+            "required": ["kind", "challenge", "readback", "control"],
+            "properties": {
+              "kind": {},
+              "challenge": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "nonce" } } },
+              "readback": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["step", "ref"],
+                "properties": {
+                  "step": { "type": "string" },
+                  "ref": { "type": "string" },
+                  "marker": { "type": "object", "additionalProperties": false, "required": ["regex"], "properties": { "regex": { "type": "string" } } }
+                }
+              },
+              "control": { "$ref": "#/$defs/stepref" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "oob_interaction.v1" } } },
+          "then": {
+            "additionalProperties": false,
+            "required": ["kind", "protocol"],
+            "properties": {
+              "kind": {},
+              "protocol": { "enum": ["dns", "http"] },
+              "window_seconds": { "type": "integer", "minimum": 1, "maximum": 30 }
+            }
+          }
+        }
+      ]
+    },
+    "stepref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step"],
+      "properties": { "step": { "type": "string" } }
+    },
+    "readbackref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step", "ref"],
+      "properties": { "step": { "type": "string" }, "ref": { "type": "string" } }
+    }
+  }
+}

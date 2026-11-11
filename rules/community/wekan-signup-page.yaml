@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:wekan-signup-page"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Wekan Sign Up Page - Exposure"
+  description: "Detected exposed Wekan sign-up functionality, indicating that unauthenticated users could access the registration page and potentially create new accounts. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wekan.fi/"
+  tags: ["wekan", "sign-up", "register", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/sign-up" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "__meteor_runtime_config__" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Wekan" } }
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "<link rel=\"stylesheet\".*meteor_css_resource=true" } }

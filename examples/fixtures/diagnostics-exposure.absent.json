@@ -1,0 +1,6 @@
+{
+  "responses": [
+    { "method": "GET", "path": "/demo/diagnostics", "status": 403, "body": "forbidden" }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

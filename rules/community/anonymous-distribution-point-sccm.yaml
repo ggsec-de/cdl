@@ -1,0 +1,36 @@
+schema_version: 1
+id: "cortex.community:anonymous-distribution-point-sccm"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Microsoft SCCM - Anonymous Distribution Point Access"
+  description: "Microsoft System Center Configuration Manager (SCCM) can be configured to allow anonymous access to its distribution points.This can lead to sensitive data exposure and information gathering by unauthorized users.This misconfiguration is exploitable only via HTTP. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.synacktiv.com/en/publications/sccmsecretspy-exploiting-sccm-policies-distribution-for-credentials-harvesting-initial"
+    - "https://github.com/badsectorlabs/sccm-http-looter"
+    - "https://learn.microsoft.com/en-us/intune/configmgr/core/servers/deploy/configure/install-and-configure-distribution-points"
+  tags: ["misconfig", "microsoft", "sccm", "anonymous", "distribution-point", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/SMS_DP_SMSPKG$/Datalib" }
+  - id: "probe1"
+    request: { method: "GET", path: "/:80/SMS_DP_SMSPKG$/Datalib" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "/SMS_DP_SMSPKG\\$\\/Datalib/([0-9a-z-]+)\\.INI" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "/SMS_DP_SMSPKG\\$\\/Datalib/([0-9a-z-]+)\\.INI" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

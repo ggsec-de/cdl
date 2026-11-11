@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:hadoop-unauth-rce"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Apache Hadoop YARN ResourceManager - Remote Code Execution"
+  description: "Apache Hadoop YARN ResourceManager is susceptible to remote code execution. An attacker can execute malware, obtain sensitive information, modify data, and/or gain full control over a compromised system without entering necessary credentials. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "http://archive.hack.lu/2016/Wavestone%20-%20Hack.lu%202016%20-%20Hadoop%20safari%20-%20Hunting%20for%20vulnerabilities%20-%20v1.0.pdf"
+    - "https://github.com/rapid7/metasploit-framework/blob/master/modules/exploits/linux/http/hadoop_unauth_exec.rb"
+    - "https://github.com/vulhub/vulhub/tree/master/hadoop/unauthorized-yarn"
+    - "https://github.com/Al1ex/Hadoop-Yarn-ResourceManager-RCE"
+  cwes: [306]
+  tags: ["vulhub", "apache", "hadoop", "unauth", "rce", "msf", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "POST", path: "/ws/v1/cluster/apps/new-application" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"application-id\"" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:frappe-default-login"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Frappe Framework - Default Login Credentials"
+  description: "Frappe Framework (and ERPNext) is accessible using the default credentials Administrator:admin. Successful login exposes full administrative access to the ERP/CRM system and underlying data. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://frappeframework.com"
+    - "https://docs.erpnext.com"
+  tags: ["default-login", "frappe", "erpnext", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "POST"
+      path: "/api/method/login"
+      headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" }
+      body: "usr=Administrator&pwd=admin"
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Logged In" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "full_name" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

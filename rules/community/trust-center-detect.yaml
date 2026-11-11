@@ -1,0 +1,76 @@
+schema_version: 1
+id: "cortex.community:trust-center-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Trust Center Page - Detect"
+  description: "Detected the presence of Trust Center pages or subdomains provided by Safebase, Vanta, or TrustCloud. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["misc", "trust", "center", "generic", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/trust" }
+  - id: "probe2"
+    request: { method: "GET", path: "/trust-center" }
+  - id: "probe3"
+    request: { method: "GET", path: "/trust-center.html" }
+  - id: "probe4"
+    request: { method: "GET", path: "/security" }
+  - id: "probe5"
+    request: { method: "GET", path: "/compliance" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)Trust\\ Center" } }
+              - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)Powered\\ by\\ Safebase" } }
+              - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)TrustShare\\ Overview" } }
+              - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)static\\.vanta\\.com/static/entry\\-trust\\-report\\.js" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)Trust\\ Center" } }
+              - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)Powered\\ by\\ Safebase" } }
+              - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)TrustShare\\ Overview" } }
+              - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)static\\.vanta\\.com/static/entry\\-trust\\-report\\.js" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)Trust\\ Center" } }
+              - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)Powered\\ by\\ Safebase" } }
+              - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)TrustShare\\ Overview" } }
+              - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)static\\.vanta\\.com/static/entry\\-trust\\-report\\.js" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - regex: { left: { ref: "steps.probe3.body" }, right: { value: "(?i)Trust\\ Center" } }
+              - regex: { left: { ref: "steps.probe3.body" }, right: { value: "(?i)Powered\\ by\\ Safebase" } }
+              - regex: { left: { ref: "steps.probe3.body" }, right: { value: "(?i)TrustShare\\ Overview" } }
+              - regex: { left: { ref: "steps.probe3.body" }, right: { value: "(?i)static\\.vanta\\.com/static/entry\\-trust\\-report\\.js" } }
+          - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - regex: { left: { ref: "steps.probe4.body" }, right: { value: "(?i)Trust\\ Center" } }
+              - regex: { left: { ref: "steps.probe4.body" }, right: { value: "(?i)Powered\\ by\\ Safebase" } }
+              - regex: { left: { ref: "steps.probe4.body" }, right: { value: "(?i)TrustShare\\ Overview" } }
+              - regex: { left: { ref: "steps.probe4.body" }, right: { value: "(?i)static\\.vanta\\.com/static/entry\\-trust\\-report\\.js" } }
+          - eq: { left: { ref: "steps.probe4.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)Trust\\ Center" } }
+              - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)Powered\\ by\\ Safebase" } }
+              - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)TrustShare\\ Overview" } }
+              - regex: { left: { ref: "steps.probe5.body" }, right: { value: "(?i)static\\.vanta\\.com/static/entry\\-trust\\-report\\.js" } }
+          - eq: { left: { ref: "steps.probe5.status" }, right: { value: 200 } }

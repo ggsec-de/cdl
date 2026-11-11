@@ -1,0 +1,36 @@
+schema_version: 1
+id: "cortex.community:navicat-server-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Navicat On-Prem Server Panel - Detect"
+  description: "Navicat On-Prem Server is an on-premise solution that provides you with the option to host a cloud environment for storing Navicat objects internally at your location. In our On-Prem environment, you can enjoy complete control over your system and maintain 100% privacy. It is secure and reliable that allow you to maintain a level of control that the cloud often cannot. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["panel", "navicat", "on-prem", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Navicat On-Prem Server</title>" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "content=\"Navicat On-Prem Server" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Navicat On-Prem Server</title>" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "content=\"Navicat On-Prem Server" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

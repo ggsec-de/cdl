@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:badarg-log"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Badarg Log File Exposure"
+  description: "Badarg log file was exposed. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/maurosoria/dirsearch/blob/master/db/dicc.txt"
+    - "https://www.erlang.org/doc/reference_manual/errors.html"
+  tags: ["exposure", "badarg", "log", "debug", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/.badarg.log" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Special kernel symbols:" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Kernel executable memory footprint:" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "badarg" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

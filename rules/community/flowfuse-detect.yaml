@@ -1,0 +1,36 @@
+schema_version: 1
+id: "cortex.community:flowfuse-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "FlowFuse - Detect"
+  description: "FlowFuse is an industrial application platform built around Node-RED for edge data collection, integration, and operational workflows. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://flowfuse.com/"
+    - "https://github.com/FlowFuse/flowfuse"
+  tags: ["flowfuse", "flowforge", "tech", "node-red", "industrial", "iot", "detect", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>FlowFuse</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Log in - FlowFuse</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>FlowFuse Dashboard</title>" } }
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "FlowFuse doesn't work properly without JavaScript enabled" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "meta name=\"description\" content=\"FlowFuse Dashboard\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "theme&#x2F;css&#x2F;forge-common.css" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

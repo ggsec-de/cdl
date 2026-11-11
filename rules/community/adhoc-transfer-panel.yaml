@@ -1,0 +1,26 @@
+schema_version: 1
+id: "cortex.community:adhoc-transfer-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WS-FTP Ad Hoc Transfer Panel - Detect"
+  description: "WS_FTP Ad Hoc panel was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["panel", "wsftp", "ad-hoc", "detect", "login", "progress", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/AHT/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Ad Hoc Transfer" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

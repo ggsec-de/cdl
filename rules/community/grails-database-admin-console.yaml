@@ -1,0 +1,38 @@
+schema_version: 1
+id: "cortex.community:grails-database-admin-console"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Grails Admin Console Panel - Detect"
+  description: "Grails Admin Console panel was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.acunetix.com/vulnerabilities/web/grails-database-console/"
+    - "http://h2database.com/html/quickstart.html#h2_console"
+  cwes: [200]
+  tags: ["grails", "panel", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/dbconsole/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/h2-console/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>H2 Console</title>" } }
+          - not:
+              contains: { left: { ref: "steps.probe0.body" }, right: { value: "Sorry, remote connections ('webAllowOthers') are disabled on this server" } }
+      - all:
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>H2 Console</title>" } }
+          - not:
+              contains: { left: { ref: "steps.probe1.body" }, right: { value: "Sorry, remote connections ('webAllowOthers') are disabled on this server" } }

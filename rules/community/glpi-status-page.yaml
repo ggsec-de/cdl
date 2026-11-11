@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:glpi-status-page"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "GLPI Status Page - Detect"
+  description: "A php status page that indicates if local or ldap identity is used for glpi. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://buildmedia.readthedocs.org/media/pdf/glpi-user-documentation/latest/glpi-user-documentation.pdf"
+  tags: ["tech", "status", "glpi", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/status.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "GLPI_DB_OK" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "GLPI_SESSION_DIR_OK" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "GLPI_OK" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

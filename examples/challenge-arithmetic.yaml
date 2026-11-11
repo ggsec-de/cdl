@@ -1,0 +1,66 @@
+# Example 3 — a confirming proof.
+#
+# The engine picks two random integers, the rule sends them as "a*b", and the engine checks whether the
+# product comes back. The rule never sends the product itself, so a server that merely repeats its input
+# cannot pass: only a server that really evaluated the expression can return the right number.
+# The second step is the negative control — a request whose response must NOT contain the product.
+#
+# The verdict shows `cleanup=Unknown`. That is expected: the rule declares `side_effects: state_change` and
+# sends POST requests but has no `cleanup` steps, so the engine cannot tell whether anything was left behind.
+# A rule that really creates something should remove it - see resource-lifecycle.yaml.
+#
+# Try it offline (a server that evaluates, then a server that only echoes):
+#   ggsec rules test examples/challenge-arithmetic.yaml --fixture examples/fixtures/challenge-arithmetic.json --expect Confirmed
+#   ggsec rules test examples/challenge-arithmetic.yaml --fixture examples/fixtures/challenge-arithmetic.echo.json --expect NoMatch
+schema_version: 1
+id: "example:challenge-arithmetic"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.expression_evaluation.v1"]
+info:
+  name: "Server-side expression evaluation"
+  description: "The calculator endpoint evaluates an expression supplied by the client."
+  cwes: [94]
+  tags: ["expression-evaluation", "example"]
+  remediation: "Do not evaluate client-supplied expressions; parse and validate the input instead."
+finding:
+  sink_type: "CODE_EXEC"
+  impact: "RCE"
+  severity: "High"
+  root_cause: "calculator-expression-evaluation"
+execution:
+  auth: "anonymous"
+  side_effects: "state_change"
+  transport: "http"
+  max_requests: 2
+steps:
+  - id: "probe"
+    request:
+      method: "POST"
+      path: "/demo/calc"
+      json_body:
+        expr: "{{ challenge.a }}*{{ challenge.b }}"
+    expect:
+      eq:
+        left: { ref: "steps.probe.status" }
+        right: { value: 200 }
+  - id: "control"
+    request:
+      method: "POST"
+      path: "/demo/echo"
+      json_body:
+        expr: "{{ challenge.a }}*{{ challenge.b }}"
+    expect:
+      eq:
+        left: { ref: "steps.control.status" }
+        right: { value: 200 }
+proof:
+  kind: "expression_evaluation.v1"
+  challenge:
+    kind: "integer_product"
+  readback:
+    step: "probe"
+    ref: "steps.probe.body"
+  control:
+    step: "control"

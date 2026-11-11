@@ -1,0 +1,39 @@
+schema_version: 1
+id: "cortex.community:vscode-mcp-json"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Visual Studio Code MCP Configuration (\"mcp.json\") Exposure"
+  description: "Detected exposed VS Code MCP (Model Context Protocol) configuration files (mcp.json) which may contain sensitive information including API keys, server endpoints, authentication tokens, and tool configurations for AI assistants and language models. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://code.visualstudio.com/docs/copilot/chat/mcp-servers"
+    - "https://modelcontextprotocol.io/"
+  tags: ["exposure", "vscode", "config", "mcp", "ai", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/mcp.json" }
+  - id: "probe1"
+    request: { method: "GET", path: "/.mcp.json" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"mcpServers\": {" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"args\":" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "\"mcpServers\": {" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "\"args\":" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

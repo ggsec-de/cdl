@@ -1,0 +1,6 @@
+{
+  "responses": [
+    { "method": "GET", "path": "/demo/diagnostics", "status": 200, "body": "<h1>DEMO_DIAGNOSTICS_PAGE</h1> uptime 4d 2h" }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

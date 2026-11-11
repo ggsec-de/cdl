@@ -1,0 +1,90 @@
+schema_version: 1
+id: "cortex.community:tomcat-scripts"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Apache Tomcat Example Scripts - Detect"
+  description: "Multiple Apache Tomcat example scripts were detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.acunetix.com/vulnerabilities/web/apache-tomcat-examples-directory-vulnerabilities/"
+    - "https://www.rapid7.com/db/vulnerabilities/apache-tomcat-example-leaks/"
+  cwes: [200]
+  tags: ["apache", "tomcat", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/examples/servlets/index.html" }
+  - id: "probe1"
+    request: { method: "GET", path: "/examples/jsp/index.html" }
+  - id: "probe2"
+    request: { method: "GET", path: "/examples/websocket/index.xhtml" }
+  - id: "probe3"
+    request: { method: "GET", path: "/examples/servlets/servlet/SessionExample" }
+  - id: "probe4"
+    request: { method: "GET", path: "/..;/examples/servlets/index.html" }
+  - id: "probe5"
+    request: { method: "GET", path: "/..;/examples/jsp/index.html" }
+  - id: "probe6"
+    request: { method: "GET", path: "/..;/examples/websocket/index.xhtml" }
+  - id: "probe7"
+    request: { method: "GET", path: "/..;/examples/servlets/servlet/SessionExample" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "GET based form" } }
+      - any:
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "GET based form" } }
+      - any:
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "GET based form" } }
+      - any:
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe3.body" }, right: { value: "GET based form" } }
+      - any:
+          - contains: { left: { ref: "steps.probe4.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe4.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe4.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe4.body" }, right: { value: "GET based form" } }
+      - any:
+          - contains: { left: { ref: "steps.probe5.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe5.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe5.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe5.body" }, right: { value: "GET based form" } }
+      - any:
+          - contains: { left: { ref: "steps.probe6.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe6.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe6.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe6.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe6.body" }, right: { value: "GET based form" } }
+      - any:
+          - contains: { left: { ref: "steps.probe7.body" }, right: { value: "JSP Examples" } }
+          - contains: { left: { ref: "steps.probe7.body" }, right: { value: "JSP Samples" } }
+          - contains: { left: { ref: "steps.probe7.body" }, right: { value: "Servlets Examples" } }
+          - contains: { left: { ref: "steps.probe7.body" }, right: { value: "WebSocket Examples" } }
+          - contains: { left: { ref: "steps.probe7.body" }, right: { value: "GET based form" } }

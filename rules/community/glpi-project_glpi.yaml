@@ -1,0 +1,41 @@
+schema_version: 1
+id: "cortex.community:glpi-project_glpi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "GLPI Panel - Detect"
+  description: "GLPI panel was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://glpi-project.org/"
+    - "https://www.exploit-db.com/ghdb/7002"
+  cwes: [200]
+  tags: ["glpi", "edb", "panel", "glpi-project", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/CHANGELOG.md" }
+  - id: "probe2"
+    request: { method: "GET", path: "/glpi/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)GLPI" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)glpi\\-project\\.org" } }
+      - all:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)GLPI" } }
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)glpi\\-project\\.org" } }
+      - all:
+          - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)GLPI" } }
+          - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)glpi\\-project\\.org" } }

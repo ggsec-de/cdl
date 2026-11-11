@@ -1,0 +1,35 @@
+{
+  "_comment": "Offline harness for cortex.lab:php2shell-session-lfi-rce. Order matters: the control response is matched BEFORE the readback, because the control's session file name contains the same sid. commandEcho reflects the engine challenge nonce carried in the query string.",
+  "responses": [
+    {
+      "_comment": "The include route really includes files - the gate the rule needs before it runs the chain.",
+      "method": "GET",
+      "pathContains": "page=%2Fetc%2Fpasswd",
+      "status": 200,
+      "body": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\n"
+    },
+    {
+      "_comment": "Negative control first: session file does not exist, so the include yields no command output.",
+      "method": "GET",
+      "pathContains": "sess_missing",
+      "status": 200,
+      "body": "<br />\n<b>Warning</b>:  include(/tmp/sessions/sess_missingggsecphp2shell000000000000): Failed to open stream\n"
+    },
+    {
+      "_comment": "Readback: the session file was included and its payload ran - echo <nonce>; id.",
+      "method": "GET",
+      "pathContains": "sess_ggsecphp2shell000000000000",
+      "status": 200,
+      "commandEcho": true
+    },
+    {
+      "_comment": "Upload: PHP's upload_progress handler stores the filename; the app itself returns JSON.",
+      "method": "POST",
+      "path": "/index.php",
+      "status": 200,
+      "headers": { "Content-Type": "application/json" },
+      "body": "{\"ok\":true}"
+    }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

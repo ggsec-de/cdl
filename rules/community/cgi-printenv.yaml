@@ -1,0 +1,34 @@
+schema_version: 1
+id: "cortex.community:cgi-printenv"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Test CGI Script - Detect"
+  description: "Test CGI script was detected. Response page returned by this CGI script exposes a list of server environment variables. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.acunetix.com/vulnerabilities/web/test-cgi-script-leaking-environment-variables/"
+  cwes: [200]
+  tags: ["exposure", "cgi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/cgi-bin/printenv.pl" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "MYSQL_HOME" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "OPENSSL_CONF" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "REMOTE_ADDR" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "SERVER_ADMIN" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Environment Variables:" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

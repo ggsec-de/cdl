@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:wordpress-social-metrics-tracker"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Social Metrics Tracker <= 1.6.8 - Unauthorised Data Export"
+  description: "The lack of proper authorisation when exporting data from the plugin could allow unauthenticated users to get information about the posts and page of the blog, including their author's username and email. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wpscan.com/vulnerability/f4eed3ba-2746-426f-b030-a8c432defeb2"
+  tags: ["wordpress", "wp-plugin", "wp", "unauth", "wpscan", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wp-admin/admin-ajax.php?page=social-metrics-tracker-export&smt_download_export_file=1" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Main URL to Post" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

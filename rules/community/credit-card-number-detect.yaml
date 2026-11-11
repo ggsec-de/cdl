@@ -1,0 +1,88 @@
+schema_version: 1
+id: "cortex.community:credit-card-number-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Credit and Debit Card Number - Detection"
+  description: "This template is designed to identify the presence of credit or debit card numbers exposed within web pages, APIs, or other application responses. It searches for patterns matching card numbers using regular expressions aligned with common card formats, including Visa, MasterCard, American Express, and Discover cards. Detecting exposed card information can help identify potential compliance issues with standards like PCI DSS and mitigate risks of data leaks. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.tenable.com/plugins/was/98129"
+    - "https://en.wikipedia.org/wiki/Payment_card_number"
+    - "https://stackoverflow.com/questions/9315647/regex-credit-card-number-tests"
+  tags: ["credit", "debit", "card", "payment", "security", "pci", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b4[0-9]{12}(?:[0-9]{3})?\\b" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b3[47][0-9]{13}\\b" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b5[1-5][0-9]{14}\\b|\\b(222[1-9]|22[3-9]\\d|2[3-6]\\d{2}|27[0-1]\\d|2720)[0-9]{12}\\b" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b65[4-9][0-9]{13}|64[4-9][0-9]{13}|6011[0-9]{12}|(622(?:12[6-9]|1[3-9][0-9]|[2-8][0-9][0-9]|9[01][0-9]|92[0-5])[0-9]{10})\\b" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b(5018|5020|5038|6304|6759|6761|6763)[0-9]{8,15}\\b" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b62[0-9]{14,17}\\b" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b3(?:0[0-5]|[68][0-9])[0-9]{11}\\b" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b(?:2131|1800|35\\d{3})\\d{11}\\b" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(card.{1,15}number|credit.{1,15}card.{1,15}number|debit.{1,15}card.{1,15}number)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(cvv|cvc|card.{1,15}verification.{1,15}(value|code))" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(pan|primary.{1,15}account.{1,15}number)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)cardholder.{1,15}name" } }
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)expiry" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)expiration" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)valid\\ thru" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)card\\ type" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)card\\ brand" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)visa" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)mastercard" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)amex" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)discover" } }
+      - not:
+          any:
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(\"|\\'|\\s)(id|user_?id|session_?id|account_?id|customer_?id|order_?id|transaction_?id|request_?id|trace_?id|correlation_?id|meeting_?id|appointment_?id|booking_?id|event_?id|calendar_?id|schedule_?id|tracking_?id|reference_?id|invoice_?id|ticket_?id)(\"|\\')?\\s*[:=]\\s*(\"|\\')?[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(\"|\\'|\\s)(timestamp|created_?at|updated_?at|deleted_?at|time|datetime|date|epoch|unix_?time|millis)(\"|\\')?\\s*[:=]\\s*(\"|\\')?[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(\"|\\'|\\s)(version|build|revision|release)(\"|\\')?\\s*[:=]\\s*(\"|\\')?[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[0-9]{13,19}[a-fA-F0-9]{4,}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[0-9]{13,19}[_-][a-zA-Z0-9]" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[0-9]{13,19}[a-zA-Z]" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(href|src|url|link|path|file|asset|resource)\\s*=\\s*[\"'][^\"']*[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(https?|ftp|file)://[^\\s]*[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\.(js|css|jpg|jpeg|png|gif|svg|woff|woff2|ttf|eot|json|xml|html|htm|ico|webp|mp4|pdf|zip|tar|gz)[\"'\\s?].*[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[0-9]{13,19}\\.(js|css|jpg|jpeg|png|gif|svg|woff|woff2|ttf|eot|json|xml|html|htm|ico|webp|mp4|pdf)" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[0-9]{1,10}\\.[0-9]{13,19}\\b" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[0-9]{13,19}\\.[0-9]" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b1[0-9]{12}\\b" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[2-9][0-9]{12,}\\b" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "[A-Za-z0-9+/=]{30,}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[a-fA-F0-9]{32,}\\b" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(api_?key|access_?token|auth_?token|bearer|secret|key|token)\\s*[:=]\\s*[\"']?[^\\s\"']*[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(callback|redirect|return|continue)_?(url|uri|link)?\\s*[:=]\\s*[\"']?[^\\s\"']*[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(phone|mobile|tel|fax|ssn|ein|tax_?id)\\s*[:=]\\s*[\"']?[0-9]{13,19}" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "[0-9]{10,}[eE][+-]?[0-9]+" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\b[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{1,4}\\.[0-9]{10,}\\b" } }
+            - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)(\"|\\'|\\s)(nonce|salt|hash|checksum|signature|digest|fingerprint)(\"|\\')?\\s*[:=]\\s*(\"|\\')?[0-9]{13,19}" } }
+      - not:
+          any:
+            - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Access Denied" } }
+            - contains: { left: { ref: "steps.probe0.body" }, right: { value: "403 Forbidden" } }
+            - contains: { left: { ref: "steps.probe0.body" }, right: { value: "401 Unauthorized" } }
+            - contains: { left: { ref: "steps.probe0.body" }, right: { value: "404 Not Found" } }
+            - contains: { left: { ref: "steps.probe0.body" }, right: { value: "500 Internal Server Error" } }
+            - contains: { left: { ref: "steps.probe0.body" }, right: { value: "502 Bad Gateway" } }
+            - contains: { left: { ref: "steps.probe0.body" }, right: { value: "503 Service Unavailable" } }

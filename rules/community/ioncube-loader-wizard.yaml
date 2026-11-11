@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:ioncube-loader-wizard"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "ioncube Loader Wizard Disclosure"
+  description: "An ioncube Loader Wizard was discovered. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://firefart.at/post/multiple-vulnerabilities-in-ioncube-loader-wizard/"
+  cwes: [200]
+  tags: ["ioncube", "disclosure", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/ioncube/loader-wizard.php" }
+  - id: "probe1"
+    request: { method: "GET", path: "/loader-wizard.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "ionCube Loader Wizard" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "ionCube Loader Wizard" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

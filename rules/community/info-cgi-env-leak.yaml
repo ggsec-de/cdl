@@ -1,0 +1,135 @@
+schema_version: 1
+id: "cortex.community:info-cgi-env-leak"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "info.cgi  Environment Variable - Disclosure"
+  description: "Detected exposure of server environment variables through the info.cgi script. This can leak sensitive paths, internal IPs, software versions, credentials in env, etc. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.acunetix.com/vulnerabilities/web/test-cgi-script-leaking-environment-variables/"
+    - "https://book.hacktricks.xyz/network-services-pentesting/pentesting-web/cgi"
+  tags: ["cgi", "exposure", "info", "env", "disclosure", "generic", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/info.cgi" }
+  - id: "probe1"
+    request: { method: "GET", path: "/cgi-bin/info.cgi" }
+  - id: "probe2"
+    request: { method: "GET", path: "/cgi-sys/info.cgi" }
+  - id: "probe3"
+    request: { method: "GET", path: "/scripts/info.cgi" }
+  - id: "probe4"
+    request: { method: "GET", path: "/lite-scripts/info.cgi" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "SERVER_SOFTWARE" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "SERVER_NAME" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "GATEWAY_INTERFACE" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "SERVER_PROTOCOL" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "REQUEST_METHOD" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "QUERY_STRING" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "REMOTE_ADDR" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "HTTP_USER_AGENT" } }
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "PATH=" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/bin:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/usr/bin:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "LD_LIBRARY_PATH" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "MYSQL_HOME" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "OPENSSL_CONF" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DOCUMENT_ROOT" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "SCRIPT_FILENAME" } }
+      - all:
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "SERVER_SOFTWARE" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "SERVER_NAME" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "GATEWAY_INTERFACE" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "SERVER_PROTOCOL" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "REQUEST_METHOD" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "QUERY_STRING" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "REMOTE_ADDR" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "HTTP_USER_AGENT" } }
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "PATH=" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "/bin:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "/usr/bin:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "LD_LIBRARY_PATH" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "MYSQL_HOME" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "OPENSSL_CONF" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "DOCUMENT_ROOT" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "SCRIPT_FILENAME" } }
+      - all:
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+          - any:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "SERVER_SOFTWARE" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "SERVER_NAME" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "GATEWAY_INTERFACE" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "SERVER_PROTOCOL" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "REQUEST_METHOD" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "QUERY_STRING" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "REMOTE_ADDR" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "HTTP_USER_AGENT" } }
+          - any:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "PATH=" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "/bin:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "/usr/bin:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "LD_LIBRARY_PATH" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "MYSQL_HOME" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "OPENSSL_CONF" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "DOCUMENT_ROOT" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "SCRIPT_FILENAME" } }
+      - all:
+          - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }
+          - any:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "SERVER_SOFTWARE" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "SERVER_NAME" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "GATEWAY_INTERFACE" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "SERVER_PROTOCOL" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "REQUEST_METHOD" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "QUERY_STRING" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "REMOTE_ADDR" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "HTTP_USER_AGENT" } }
+          - any:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "PATH=" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "/bin:" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "/usr/bin:" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "LD_LIBRARY_PATH" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "MYSQL_HOME" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "OPENSSL_CONF" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "DOCUMENT_ROOT" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "SCRIPT_FILENAME" } }
+      - all:
+          - eq: { left: { ref: "steps.probe4.status" }, right: { value: 200 } }
+          - any:
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "SERVER_SOFTWARE" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "SERVER_NAME" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "GATEWAY_INTERFACE" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "SERVER_PROTOCOL" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "REQUEST_METHOD" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "QUERY_STRING" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "REMOTE_ADDR" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "HTTP_USER_AGENT" } }
+          - any:
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "PATH=" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "/bin:" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "/usr/bin:" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "LD_LIBRARY_PATH" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "MYSQL_HOME" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "OPENSSL_CONF" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "DOCUMENT_ROOT" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "SCRIPT_FILENAME" } }

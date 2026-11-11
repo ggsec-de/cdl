@@ -1,0 +1,180 @@
+schema_version: 1
+id: "cortex.community:error-based-sql-injection"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Error based SQL injection"
+  description: "A SQL injection vulnerability was identified based on an error message returned by the server. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  cwes: [89]
+  tags: ["sqli", "generic", "error", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/'" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - not:
+          contains: { left: { ref: "steps.probe0.body" }, right: { value: "Adminer" } }
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQL syntax.{0,200}?MySQL" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\Wmysqli?_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "MySQLSyntaxErrorException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "valid MySQL result" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "check the manual that (corresponds to|fits) your MySQL server version" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Unknown column '[^ ]+' in 'field list'" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "MySqlClient\\." } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.mysql\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Zend_Db_(Adapter|Statement)_Mysqli_Exception" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\]Mysql" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "MySqlException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLSTATE\\[\\d+\\]: Syntax error or access violation" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "check the manual that (corresponds to|fits) your MariaDB server version" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "check the manual that (corresponds to|fits) your Drizzle server version" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "MemSQL does not support this type of query" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "is not supported by MemSQL" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "unsupported nested scalar subselect" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "PostgreSQL.{0,200}?ERROR" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\Wpg_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "valid PostgreSQL result" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Npgsql\\." } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "PG::SyntaxError:" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.postgresql\\.util\\.PSQLException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ERROR:\\s\\ssyntax error at or near" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ERROR: parser: parse error at or near" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "PostgreSQL query failed" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.postgresql\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\]Pgsql" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "PSQLException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Driver.{0,200}? SQL[\\-_\\ ]*Server" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "OLE DB.{0,200}? SQL Server" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\bSQL Server[^&lt;&quot;]+Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\W(mssql|sqlsrv)_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\bSQL Server[^&lt;&quot;]+[0-9a-fA-F]{8}" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "System\\.Data\\.SqlClient\\.SqlException\\.(SqlException|SqlConnection\\.OnError)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?s)Exception.{0,200}?\\bRoadhouse\\.Cms\\." } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Microsoft SQL Native Client error '[0-9a-fA-F]{8}" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\[SQL Server\\]" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ODBC SQL Server Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ODBC Driver \\d+ for SQL Server" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLServer JDBC Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.jnetdirect\\.jsql" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "macromedia\\.jdbc\\.sqlserver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Zend_Db_(Adapter|Statement)_Sqlsrv_Exception" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.microsoft\\.sqlserver\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\](Mssql|SqlSrv)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQL(Srv|Server)Exception" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Unclosed quotation mark after the character string" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Microsoft Access (\\d+ )?Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "JET Database Engine" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Access Database Engine" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ODBC Microsoft Access" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Syntax error \\(missing operator\\) in query expression" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\bORA-\\d{5}" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Oracle error" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Oracle.{0,200}?Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\W(oci|ora)_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "quoted string not properly terminated" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQL command not properly ended" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "macromedia\\.jdbc\\.oracle" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "oracle\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Zend_Db_(Adapter|Statement)_Oracle_Exception" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\](Oracle|OCI)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "OracleException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "CLI Driver.{0,200}?DB2" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "DB2 SQL error" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\bdb2_\\w+\\(" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLCODE[=:\\d, -]+SQLSTATE" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.ibm\\.db2\\.jcc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Zend_Db_(Adapter|Statement)_Db2_Exception" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\]Ibm" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "DB2Exception" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ibm_db_dbi\\.ProgrammingError" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\Wifx_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Exception.{0,200}?Informix" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Informix ODBC Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ODBC Informix driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.informix\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "weblogic\\.jdbc\\.informix" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\]Informix" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "IfxException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Dynamic SQL Error" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\Wibase_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.firebirdsql\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\]Firebird" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLite/JDBCDriver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLite\\.Exception" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(Microsoft|System)\\.Data\\.SQLite\\.SQLiteException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\W(sqlite_|SQLite3::)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\[SQLITE_ERROR\\]" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLite error \\d+:" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "sqlite3.OperationalError:" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLite3::SQLException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.sqlite\\.JDBC" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Pdo[./_\\\\]Sqlite" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQLiteException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQL error.{0,200}?POS([0-9]+)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\Wmaxdb_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "DriverSapDB" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "-3014.{0,200}?Invalid end of SQL statement" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.sap\\.dbtech\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\[-3008\\].{0,200}?: Invalid keyword or missing delimiter" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\Wsybase_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Sybase message" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Sybase.{0,200}?Server message" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SybSQLException" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Sybase\\.Data\\.AseClient" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.sybase\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Warning.{0,200}?\\Wingres_" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Ingres SQLSTATE" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Ingres\\W.{0,200}?Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.ingres\\.gcf\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Exception (condition )?\\d+\\. Transaction rollback" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.frontbase\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Syntax error 1. Missing" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(Semantic|Syntax) error [1-4]\\d{2}\\." } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Unexpected end of command in statement \\[" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Unexpected token.{0,200}?in statement \\[" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.hsqldb\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.h2\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\[42000-192\\]" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "![0-9]{5}![^\\n]+(failed|unexpected|error|syntax|expected|violation|exception)" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\[MonetDB\\]\\[ODBC Driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "nl\\.cwi\\.monetdb\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Syntax error: Encountered" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.apache\\.derby" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "ERROR 42X01" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: ", Sqlstate: (3F|42).{3}, (Routine|Hint|Position):" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "/vertica/Parser/scan" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.vertica\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "org\\.jkiss\\.dbeaver\\.ext\\.vertica" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.vertica\\.dsi\\.dataengine" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.mckoi\\.JDBCDriver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.mckoi\\.database\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "&lt;REGEX_LITERAL&gt;" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.facebook\\.presto\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "io\\.prestosql\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.simba\\.presto\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "UNION query has different number of fields: \\d+, \\d+" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Altibase\\.jdbc\\.driver" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "com\\.mimer\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Syntax error,[^\\n]+assumed to mean" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "io\\.crate\\.client\\.jdbc" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "encountered after end of query" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "A comparison operator is required here" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "-10048: Syntax error" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "rdmStmtPrepare\\(.+?\\) returned" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQ074: Line \\d+:" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SR185: Undefined procedure" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "SQ200: No table " } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Virtuoso S0002 Error" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "\\[(Virtuoso Driver|Virtuoso iODBC Driver)\\]\\[Virtuoso Server\\]" } }

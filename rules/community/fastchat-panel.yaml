@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:fastchat-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "FastChat Panel - Detect"
+  description: "FastChat, an open platform by LMSYS for training, serving, and evaluating large language model based chatbots (used by Vicuna and Chatbot Arena), was detected. An exposed, unauthenticated FastChat Gradio-based web demo instance (\"Chat with Open Large Language Models\") was identified. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/lm-sys/FastChat"
+    - "https://github.com/lm-sys/FastChat/blob/main/fastchat/serve/gradio_web_server.py"
+  tags: ["panel", "fastchat", "llm", "ai", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Chat with Open Large Language Models" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "notice_markdown" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

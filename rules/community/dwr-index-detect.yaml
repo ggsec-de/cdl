@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:dwr-index-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "DWR detect test page detection"
+  description: "The index contains the list of exposed Java classes. From here one can navigate to the test page of each class where every callable method is described and can be easily tested. This is a great way to find out what methods are exposed and learn how they function. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "http://aetherlab.net/2012/09/experiences-in-pentesting-dwr/"
+  tags: ["tech", "misconfig", "dwr", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/dwr/index.html" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>DWR Test Index</title>" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

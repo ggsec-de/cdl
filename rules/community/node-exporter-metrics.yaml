@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:node-exporter-metrics"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Detect Node Exporter Metrics"
+  description: "Information Disclosure of Garbage Collection Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["node", "exposure", "debug", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/metrics" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "node_cooling_device_cur_state{name=" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "node_network_carrier{device=" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "node_network_flags{device=" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "node_cpu_seconds_total{cpu=" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "node_filesystem_files{device=" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

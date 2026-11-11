@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:mistserver-installer"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "MistServer Installation Wizard - Exposure"
+  description: "MistServer installation/setup wizard is publicly accessible, allowing unauthorized users to create admin accounts and take full control of the streaming server. This is a first-user-wins vulnerability. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://docs.mistserver.org/mistserver/configuration"
+    - "https://mistserver.org/"
+  tags: ["misconfig", "mistserver", "install", "exposure", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "MistServer" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Management Interface" } }
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Create new account" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "No account has been created yet" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Select other host" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

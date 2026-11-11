@@ -1,0 +1,66 @@
+schema_version: 1
+id: "cortex.community:gitlab-ci-yml"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "GitLab CI YAML - Exposure"
+  description: "The gitlab-ci.yml file, used for configuring CI/CD pipelines in GitLab, has been found exposed. This file contains crucial details about the build, test, and deployment processes, and may include sensitive information such as API keys, tokens, environment variables, and other credentials. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://x.com/RootMoksha/status/1816571625388818923/photo/1"
+  tags: ["exposure", "config", "cicd", "gitlab", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/.gitlab-ci.yml" }
+  - id: "probe1"
+    request: { method: "GET", path: "/gitlab-ci.yml" }
+  - id: "probe2"
+    request: { method: "GET", path: "/.gitlab-ci/variables.yml" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "variables:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "before_script:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "stage: build" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "script:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "image:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "variables:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "releasePath:" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "sshUser:" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "variables:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "before_script:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "stage: build" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "script:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "image:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "variables:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "releasePath:" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "sshUser:" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "variables:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "before_script:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "stage: build" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "script:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "image:" } }
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "variables:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "releasePath:" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "sshUser:" } }

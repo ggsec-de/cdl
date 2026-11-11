@@ -1,0 +1,10 @@
+{
+  "_comment": "Negative fixture: the probe endpoint is a plain reflector (it returns what was sent), so no real command ran — the readback carries the nonce as sent material only and the proof must stay NoMatch (never a false RCE).",
+  "responses": [
+    { "method": "GET", "path": "/solr/admin/cores", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"QTime\":1},\"initFailures\":{},\"status\":{\"demo\":{\"name\":\"demo\"}}}" },
+    { "method": "POST", "path": "/solr/demo/config", "status": 200, "body": "{\"responseHeader\":{\"status\":0}}" },
+    { "method": "GET", "path": "/solr/demo/select", "status": 200, "body": "{\"responseHeader\":{\"status\":0},\"response\":{\"numFound\":0,\"docs\":[]}}" },
+    { "method": "POST", "path": "/solr/demo/select", "reflectBody": true }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

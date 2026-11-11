@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:dedecms-carbuyaction-fileinclude"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "DedeCmsV5.6 Carbuyaction Fileinclude"
+  description: "A vulnerability in DedeCMS's 'carbuyaction.php' endpoint allows remote attackers to return the content of locally stored files via a vulnerability in the 'code' parameter. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.cnblogs.com/milantgh/p/3615986.html"
+  cwes: [23]
+  tags: ["dedecms", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request:
+      method: "GET"
+      path: "/plus/carbuyaction.php?dopost=return&code=../../"
+      headers: { "Cookie": "code=cod" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Cod::respond()" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

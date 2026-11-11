@@ -1,0 +1,44 @@
+schema_version: 1
+id: "cortex.community:ampache-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Ampache Login Panel - Detect"
+  description: "Ampache login panel was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  cwes: [200]
+  tags: ["panel", "ampache", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/login.php" }
+  - id: "probe2"
+    request: { method: "GET", path: "/public/login.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)Ampache\\ ::\\ For\\ the\\ Love\\ of\\ Music" } }
+          - not:
+              contains: { left: { ref: "steps.probe0.body" }, right: { value: "Music - Installation" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "(?i)Ampache\\ ::\\ For\\ the\\ Love\\ of\\ Music" } }
+          - not:
+              contains: { left: { ref: "steps.probe1.body" }, right: { value: "Music - Installation" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - regex: { left: { ref: "steps.probe2.body" }, right: { value: "(?i)Ampache\\ ::\\ For\\ the\\ Love\\ of\\ Music" } }
+          - not:
+              contains: { left: { ref: "steps.probe2.body" }, right: { value: "Music - Installation" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }

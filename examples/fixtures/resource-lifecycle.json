@@ -1,0 +1,8 @@
+{
+  "responses": [
+    { "method": "POST",   "path": "/demo/notes",        "status": 201, "body": "{\"id\":\"n-1001\"}" },
+    { "method": "GET",    "path": "/demo/notes/n-1001", "status": 200, "body": "{\"id\":\"n-1001\",\"text\":\"stored\"}" },
+    { "method": "DELETE", "path": "/demo/notes/n-1001", "status": 204, "body": "" }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

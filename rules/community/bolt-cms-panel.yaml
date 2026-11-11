@@ -1,0 +1,41 @@
+schema_version: 1
+id: "cortex.community:bolt-cms-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "BoltCMS Login Panel - Detect"
+  description: "BoltCMS login panel was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/bolt/bolt"
+  cwes: [200]
+  tags: ["panel", "bolt", "cms", "login", "boltcms", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/bolt/login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<form action=\"/bolt/login\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<img class=\"logo\" alt=\"Bolt CMS logo\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<img src=\"/app/view/img/bolt-logo.png\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<link rel=\"shortcut icon\" href=\"/app/view/img/favicon-bolt.ico\">" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<link rel=\"stylesheet\" href=\"/app/view/css/bolt-old-ie.css\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<link rel=\"stylesheet\" href=\"/app/view/css/bolt.css\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<script src=\"/app/view/js/bolt.js\"></script>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<script src=\"/app/view/js/bolt.min.js\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<script src=\"/assets/bolt.js\"></script>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Bolt requires JavaScript to function properly and continuing without it might corrupt or erase data." } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Bolt » Login" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Cookies are required to log on to Bolt. Please allow cookies." } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

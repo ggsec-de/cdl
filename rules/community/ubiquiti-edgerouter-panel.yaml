@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:ubiquiti-edgerouter-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Ubiquiti EdgeRouter - Login Panel"
+  description: "Ubiquiti EdgeRouter is an enterprise-grade router with advanced routing capabilities and VPN features, running EdgeOS (Ubiquiti's Vyatta-based firmware). Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.ui.com/edgemax/edgerouter/"
+  tags: ["panel", "ubiquiti", "edgerouter", "vpn", "router", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "EdgeOS" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

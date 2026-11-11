@@ -1,0 +1,82 @@
+schema_version: 1
+id: "cortex.community:pi-hole-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Pi-hole Login Panel - Detect"
+  description: "Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["tech", "pihole", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/admin/index.php" }
+  - id: "probe2"
+    request: { method: "GET", path: "/admin/login.php" }
+  - id: "probe3"
+    request: { method: "GET", path: "/admin/index.php?login" }
+  - id: "probe4"
+    request: { method: "GET", path: "/index.php?login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Pi-hole" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Web Interface" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "FTL" } }
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Pi-hole" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Pi-hole: Your black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Pi-hole: A black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<pre>sudo pihole -a -p</pre>" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Pi-hole" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Web Interface" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "FTL" } }
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Pi-hole" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Pi-hole: Your black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Pi-hole: A black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<pre>sudo pihole -a -p</pre>" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Pi-hole" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Web Interface" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "FTL" } }
+          - any:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<title>Pi-hole" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Pi-hole: Your black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Pi-hole: A black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<pre>sudo pihole -a -p</pre>" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Pi-hole" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Web Interface" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "FTL" } }
+          - any:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<title>Pi-hole" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Pi-hole: Your black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Pi-hole: A black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<pre>sudo pihole -a -p</pre>" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Pi-hole" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Web Interface" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "FTL" } }
+          - any:
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "<title>Pi-hole" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Pi-hole: Your black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Pi-hole: A black hole for Internet advertisements" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "<pre>sudo pihole -a -p</pre>" } }

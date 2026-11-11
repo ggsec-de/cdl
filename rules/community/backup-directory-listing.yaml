@@ -1,0 +1,35 @@
+schema_version: 1
+id: "cortex.community:backup-directory-listing"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Backup Directory Listing - Detect"
+  description: "Backup Directory Listing folder was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.invicti.com/learn/directory-listing/"
+    - "https://hackerone.com/reports/684838"
+  tags: ["hackerone", "backups", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/backup/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/php/backup/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "Index of .*/backup" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "Index of .*/backup" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:dlink-unauth-cgi-script"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "D-Link DNS Series  CGI Script - Unauthenticated"
+  description: "A vulnerability has been identified in the D-Link DNS series network storage devices, allowing for the exposure of sensitive device information to unauthorized actors. This vulnerability is due to an unauthenticated access flaw in the info.cgi script, which can be exploited via a simple HTTP GET request, affecting over 920,000 devices on the Internet. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/netsecfish/info_cgi"
+  tags: ["unauth", "dlink", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/cgi-bin/info.cgi" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Product=" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Version=" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Model=" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

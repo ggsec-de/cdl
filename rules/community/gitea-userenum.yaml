@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:gitea-userenum"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Gitea - User Enumeration"
+  description: "Enumerates the users registered in the Gitea web application, a self-hosted all-in-one software development service, including Git hosting, code review, team collaboration, package registry and CI/CD. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["tech", "gitea", "enumeration", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/explore/users/sitemap-1.xml" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/schemas/sitemap/" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "lastmod" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

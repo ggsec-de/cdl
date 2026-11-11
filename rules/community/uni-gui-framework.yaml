@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:uni-gui-framework"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "UniGUI Framework - Detect"
+  description: "Checks for the presence of UniGUI framework and extracts its version along with the Sencha Ext JS version. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["tech", "unigui", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "uni-xtheme-" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "ext-all.js" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "uniVars._extVer=" } }
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "uni-(\\d+\\.\\d+\\.\\d+\\.\\d+)/" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "uniVars._extVer=\"(\\d+\\.\\d+\\.\\d+)\"" } }

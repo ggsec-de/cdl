@@ -1,0 +1,27 @@
+schema_version: 1
+id: "cortex.community:wamp-xdebug-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WAMP Xdebug - Detect"
+  description: "WAMP Xdebug was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/random-robbie/My-Shodan-Scripts/blob/1b01bceecc9be0b74b202f445874920eee48bba5/wamp-xdebug/wamp-xdebug.py"
+  cwes: [200]
+  tags: ["debug", "config", "wamp", "misconfig", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/?phpinfo=-1" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    contains: { left: { ref: "steps.probe0.body" }, right: { value: "xdebug.remote_connect_back</td><td class=\"v\">On</td><td class=\"v\">On</td>" } }

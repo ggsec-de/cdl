@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:proxmox-backup-server-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Proxmox Backup Server - Detect"
+  description: "Proxmox Backup Server is an enterprise backup solution for backing up and restoring virtual machines, containers, and physical hosts. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.proxmox.com/en/products/proxmox-backup-server/overview"
+    - "https://pbs.proxmox.com/docs/"
+  tags: ["tech", "proxmox", "backup", "virtualization", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: " - Proxmox Backup Server</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/js/proxmox-backup-gui.js" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

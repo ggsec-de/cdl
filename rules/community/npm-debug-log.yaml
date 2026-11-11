@@ -1,0 +1,39 @@
+schema_version: 1
+id: "cortex.community:npm-debug-log"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "NPM Debug Log Disclosure"
+  description: "NPM Debug log file exposed. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/maurosoria/dirsearch/blob/master/db/dicc.txt"
+    - "https://docs.npmjs.com/generating-and-locating-npm-debug.log-files"
+  tags: ["exposure", "npm", "logs", "debug", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/npm-debug.log" }
+  - id: "probe1"
+    request: { method: "GET", path: "/assets/npm-debug.log" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "verbose cli" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "verbose stack" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "verbose cli" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "verbose stack" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

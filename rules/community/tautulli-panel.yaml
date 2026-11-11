@@ -1,0 +1,43 @@
+schema_version: 1
+id: "cortex.community:tautulli-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Tautulli Panel - Detect"
+  description: "A Python based monitoring and tracking tool for Plex Media Server. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://tautulli.com/"
+    - "https://github.com/Tautulli/Tautulli"
+  tags: ["panel", "tautulli", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/auth/login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Tautulli - Login" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "content=\"Tautulli" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "alt=\"Tautulli" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Sign In with Tautulli" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Tautulli - Login" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "content=\"Tautulli" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "alt=\"Tautulli" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Sign In with Tautulli" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

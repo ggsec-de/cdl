@@ -1,0 +1,43 @@
+# Example 1 — the smallest useful rule.
+# One GET request and a `signal.v1` proof: if the response looks like the diagnostics page, report it.
+# A signal is an observation, so the engine reports it as "Likely", never "Confirmed".
+#
+# Try it offline:
+#   ggsec rules test examples/diagnostics-exposure.yaml --fixture examples/fixtures/diagnostics-exposure.json --expect Signal
+schema_version: 1
+id: "example:diagnostics-exposure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Diagnostics endpoint exposed"
+  description: "The application's diagnostics page is reachable without authentication."
+  cwes: [200]
+  tags: ["exposure", "example"]
+  remediation: "Restrict the diagnostics endpoint to administrators or remove it from production builds."
+finding:
+  sink_type: "INFORMATION_DISCLOSURE"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "diagnostics-exposure"
+execution:
+  auth: "anonymous"
+  side_effects: "read_only"
+  transport: "http"
+  max_requests: 1
+steps:
+  - id: "read"
+    request:
+      method: "GET"
+      path: "/demo/diagnostics"
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - eq:
+          left: { ref: "steps.read.status" }
+          right: { value: 200 }
+      - contains:
+          left: { ref: "steps.read.body" }
+          right: { value: "DEMO_DIAGNOSTICS_PAGE" }

@@ -1,0 +1,52 @@
+schema_version: 1
+id: "cortex.community:flutter-web-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Flutter Web Application - Detect"
+  description: "Detect flutter web apps looking for flutter_bootstrap.js,main.dart.js and flutter_service_worker.js files. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["tech", "detect", "flutter", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/flutter_service_worker.js" }
+  - id: "probe1"
+    request: { method: "GET", path: "/main.dart.js" }
+  - id: "probe2"
+    request: { method: "GET", path: "/flutter_bootstrap.js" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "_flutter.loader.didCreateEngineInitializer" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "_flutter.buildConfig" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "flutter-app-manifest" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "flutter-temp-cache" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "flutter-app-cache" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "ext.flutter.disassemble" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "#flutterweb-theme" } }
+      - any:
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "_flutter.loader.didCreateEngineInitializer" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "_flutter.buildConfig" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "flutter-app-manifest" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "flutter-temp-cache" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "flutter-app-cache" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "ext.flutter.disassemble" } }
+          - contains: { left: { ref: "steps.probe1.body" }, right: { value: "#flutterweb-theme" } }
+      - any:
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "_flutter.loader.didCreateEngineInitializer" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "_flutter.buildConfig" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "flutter-app-manifest" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "flutter-temp-cache" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "flutter-app-cache" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "ext.flutter.disassemble" } }
+          - contains: { left: { ref: "steps.probe2.body" }, right: { value: "#flutterweb-theme" } }

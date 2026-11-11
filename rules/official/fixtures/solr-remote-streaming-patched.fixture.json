@@ -1,0 +1,10 @@
+{
+  "_comment": "Negative fixture: the same target with RemoteStreaming unavailable (disabled or a fixed build) — the dump endpoint answers an error carrying no file bytes, so the differential must stay NoMatch rather than reporting a file read.",
+  "responses": [
+    { "method": "GET", "path": "/solr/admin/cores", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"QTime\":1},\"initFailures\":{},\"status\":{\"demo\":{\"name\":\"demo\"}}}" },
+    { "method": "GET", "pathContains": "stream.url=file", "status": 500, "body": "{\"error\":{\"metadata\":[\"error-class\",\"org.apache.solr.common.SolrException\"],\"msg\":\"Remote streaming is disabled\",\"code\":500}}" },
+    { "method": "GET", "path": "/solr/demo/debug/dump", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"handler\":\"org.apache.solr.handler.DumpRequestHandler\"},\"params\":{\"param\":\"ContentStreams\"}}" },
+    { "method": "POST", "path": "/solr/demo/config", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"QTime\":12}}" }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

@@ -1,0 +1,33 @@
+schema_version: 1
+id: "cortex.community:deepstack-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "DeepStack AI Server Panel - Detect"
+  description: "DeepStack, an open-source, self-hosted computer-vision (AI) server that provides object, face, and scene detection APIs, commonly deployed alongside home-automation stacks such as Home Assistant and Frigate on port 5000, was detected. An exposed, unauthenticated DeepStack landing/activation page was identified. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/johnolafenwa/DeepStack"
+    - "https://deepstack.cc"
+    - "http://dev.deepstack.cc"
+  tags: ["panel", "deepstack", "ai", "computer-vision", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DeepStack Activated" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "deepstack.cc" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>DeepStack</title>" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

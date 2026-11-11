@@ -1,0 +1,37 @@
+schema_version: 1
+id: "cortex.community:nextjs-vite-public-env"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Next.js / Vite Public ENV Exposure"
+  description: "Identified public environment variables exposed to the client in Next.js (__NEXT_DATA__.env) and Vite applications through runtime configurations. Extended to detect any exposed Supabase URL on the page, regardless of variable name. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://nextjs.org/docs/app/building-your-application/configuring/environment-variables"
+    - "https://vite.dev/guide/env-and-mode.html"
+    - "https://supabase.com/docs/guides/api#api-keys"
+  tags: ["exposure", "env", "nextjs", "vite", "supabase", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)\"NEXT_PUBLIC_SUPABASE_URL\"\\s*:\\s*\"https?://[a-z0-9\\.\\-:/]+\"" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)\"NEXT_PUBLIC_SUPABASE_ANON_KEY\"\\s*:\\s*\"[A-Za-z0-9\\.\\-_]{20,}\"" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)\\bVITE_SUPABASE_URL\\b\"\\s*:\\s*\"https?://[a-z0-9\\.\\-:/]+\"" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)\\bVITE_SUPABASE_ANON_KEY\\b\"\\s*:\\s*\"[A-Za-z0-9\\.\\-_]{20,}\"" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)window\\.__env\\s*=\\s*\\{[^}]*?(SUPABASE_(URL|ANON_KEY))[^}]*?\\}" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)__NEXT_DATA__.*?\"env\"\\s*:\\s*\\{[^}]*?NEXT_PUBLIC_[A-Z0-9_]{2,}" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(?i)\\bVITE_[A-Z0-9_]{2,}\"\\s*:\\s*\"[^\"]{3,}" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

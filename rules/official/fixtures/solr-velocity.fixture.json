@@ -1,0 +1,10 @@
+{
+  "_comment": "Offline fixture for `rules test`: the Config API POSTs are accepted, the benign wt=json read returns plain JSON, and the velocity probe runs the engine command (commandEcho reflects the sent nonce + a uid= line).",
+  "responses": [
+    { "method": "GET", "path": "/solr/admin/cores", "status": 200, "body": "{\"responseHeader\":{\"status\":0,\"QTime\":1},\"initFailures\":{},\"status\":{\"demo\":{\"name\":\"demo\"}}}" },
+    { "method": "POST", "path": "/solr/demo/config", "status": 200, "body": "{\"responseHeader\":{\"status\":0}}" },
+    { "method": "GET", "path": "/solr/demo/select", "status": 200, "body": "{\"responseHeader\":{\"status\":0},\"response\":{\"numFound\":0,\"docs\":[]}}" },
+    { "method": "POST", "path": "/solr/demo/select", "commandEcho": true }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

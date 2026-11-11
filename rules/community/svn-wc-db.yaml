@@ -1,0 +1,40 @@
+schema_version: 1
+id: "cortex.community:svn-wc-db"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "SVN wc.db File Exposure"
+  description: "SVN wc.db file is exposed. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/maurosoria/dirsearch/blob/master/db/dicc.txt"
+    - "https://github.com/rapid7/metasploit-framework/blob/master//modules/auxiliary/scanner/http/svn_wcdb_scanner.rb"
+    - "https://infosecwriteups.com/indias-aadhar-card-source-code-disclosure-via-exposed-svn-wc-db-c05519ea7761"
+  tags: ["msf", "exposure", "svn", "config", "files", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/.svn/wc.db" }
+  - id: "probe1"
+    request: { method: "GET", path: "/wc.db" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "SQLite format" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "WCROOT" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "SQLite format" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "WCROOT" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

@@ -1,0 +1,54 @@
+schema_version: 1
+id: "cortex.community:wordfence-waf-logs-disclosure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WordPress Wordfence - WAF Logs and Data Disclosure"
+  description: "The Wordfence Security plugin creates various log and data files in the wflogs directory. If directory listing is enabled or files are directly accessible, sensitive information about blocked attacks, IP addresses, and firewall configuration may be exposed. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wordpress.org/support/topic/detect-suspicious-content-in-word-fence-wflogs-in-my-site/"
+    - "https://wordpress.org/support/topic/syn_sent-in-wflogs-filename-php/"
+  cwes: [538]
+  tags: ["wordpress", "wp", "wp-plugin", "wordfence", "logs", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/wp-content/wflogs/" }
+  - id: "probe2"
+    request: { method: "GET", path: "/wp-content/plugins/wordfence/lib/wflogs/" }
+  - id: "probe3"
+    request: { method: "GET", path: "/wp-content/plugins/wordfence/tmp/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "plugins/wordfence" } }
+      - any:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Index of" } }
+              - any:
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "/wp-content/wflogs" } }
+                  - contains: { left: { ref: "steps.probe1.body" }, right: { value: "/wp-content/plugins/wordfence" } }
+              - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Index of" } }
+              - any:
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "/wp-content/wflogs" } }
+                  - contains: { left: { ref: "steps.probe2.body" }, right: { value: "/wp-content/plugins/wordfence" } }
+              - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+          - all:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Index of" } }
+              - any:
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "/wp-content/wflogs" } }
+                  - contains: { left: { ref: "steps.probe3.body" }, right: { value: "/wp-content/plugins/wordfence" } }
+              - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }

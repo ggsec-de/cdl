@@ -1,0 +1,29 @@
+schema_version: 1
+id: "cortex.community:hashicorp-consul-webgui"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "HashiCorp Consul Web UI Login Panel - Detect"
+  description: "HashiCorp Consul Web UI login panel was detected, Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  cwes: [200]
+  tags: ["consul", "webserver", "panel", "hashicorp", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/ui/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Consul by HashiCorp</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "%22%2C%22CONSUL_COPYRIGHT_URL%22%3A%22https%3A%2F%2Fwww.hashicorp.com%22" } }

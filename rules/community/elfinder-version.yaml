@@ -1,0 +1,38 @@
+schema_version: 1
+id: "cortex.community:elfinder-version"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "elFinder Version - Detect"
+  description: "Detects elFinder installations and extracts the version string from the bundled elfinder.min.js or elFinder.version.js files. This template only identifies the version and does not check for any vulnerability. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/Studio-42/elFinder/"
+  tags: ["tech", "elfinder", "oss", "version", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/js/elfinder.min.js" }
+  - id: "probe1"
+    request: { method: "GET", path: "/js/elFinder.version.js" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "elFinder - file manager for web" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "elFinder.prototype.version =" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "elFinder - file manager for web" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "elFinder.prototype.version =" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

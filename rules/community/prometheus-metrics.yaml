@@ -1,0 +1,68 @@
+schema_version: 1
+id: "cortex.community:prometheus-metrics"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Prometheus Metrics - Detect"
+  description: "Prometheus metrics page was detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/prometheus/prometheus"
+    - "https://hackerone.com/reports/1026196"
+  cwes: [200]
+  tags: ["exposure", "prometheus", "hackerone", "config", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/metrics" }
+  - id: "probe1"
+    request: { method: "GET", path: "/api/metrics" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "cpu_seconds_total" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "http_request_duration_seconds" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "process_virtual_memory_bytes" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "process_start_time_seconds" } }
+          - not:
+              any:
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "lvm_" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "kube" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "namedprocess" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "mysqld" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "collectd_" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "libvirt_" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "mongodb" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "blackbox_" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "haproxy_" } }
+                - contains: { left: { ref: "steps.probe0.body" }, right: { value: "rabbitmq_" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "cpu_seconds_total" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "http_request_duration_seconds" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "process_virtual_memory_bytes" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "process_start_time_seconds" } }
+          - not:
+              any:
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "lvm_" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "kube" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "namedprocess" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "mysqld" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "collectd_" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "libvirt_" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "mongodb" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "blackbox_" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "haproxy_" } }
+                - contains: { left: { ref: "steps.probe1.body" }, right: { value: "rabbitmq_" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:rancher-incomplete-setup"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Rancher - Incomplete Setup Exposure"
+  description: "Detected Rancher installation was found with an incomplete first-time setup. The bootstrap login page was publicly accessible at /dashboard/auth/login, indicating an unconfigured instance that could have been targeted for unauthorized setup completion. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://rancher.com/docs/rancher/v2.6/en/installation/"
+  tags: ["rancher", "misconfig", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/v3/settings/first-login" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"value\":\"true\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"name\":\"first-login\"" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

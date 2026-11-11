@@ -1,0 +1,25 @@
+CDL - Cortex Detection Language
+Copyright 2026 GG Advanced IT Security UG
+
+The language documentation, the JSON Schema, the example rules and the rules
+under rules/official/ are licensed under the Apache License, Version 2.0
+(see LICENSE).
+
+-------------------------------------------------------------------------------
+Ported rules (rules/community/)
+-------------------------------------------------------------------------------
+
+The rules under rules/community/ were converted to CDL from the Nuclei
+Templates project and are redistributed under that project's licence, the MIT
+License, not under the Apache License that covers the rest of this repository.
+
+    Nuclei Templates
+    Copyright (c) ProjectDiscovery, Inc.
+    https://github.com/projectdiscovery/nuclei-templates
+
+The MIT License text and its copyright notice are kept in
+rules/community/LICENSE. Every converted rule is marked with the tags
+"nuclei" and "auto-ported" in its info.tags.
+
+If you hold rights in a converted rule and believe its attribution is missing
+or incorrect, please open an issue.

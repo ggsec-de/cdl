@@ -1,0 +1,65 @@
+schema_version: 1
+id: "cortex.community:ezservermonitor-exposure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "eZ Server Monitor - Exposure"
+  description: "Detected exposed eZ Server Monitor instances that revealed sensitive server information, including hostname, OS, kernel version, CPU details, memory usage, disk space, network interfaces with IP addresses, service status, and user login history. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/shevabam/ezservermonitor-web"
+    - "https://www.ezservermonitor.com/esm-web/features"
+  tags: ["misconfig", "exposure", "ezservermonitor", "monitoring", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/esm/" }
+  - id: "probe2"
+    request: { method: "GET", path: "/monitoring/" }
+  - id: "probe3"
+    request: { method: "GET", path: "/ezservermonitor/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>eZ Server Monitor" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "eZ Server Monitor - v" } }
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "web/css/frontend.css" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<span class=\"icon-gauge\"></span>eSM" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>eZ Server Monitor" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "eZ Server Monitor - v" } }
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "web/css/frontend.css" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<span class=\"icon-gauge\"></span>eSM" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<title>eZ Server Monitor" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "eZ Server Monitor - v" } }
+          - any:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "web/css/frontend.css" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<span class=\"icon-gauge\"></span>eSM" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<title>eZ Server Monitor" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "eZ Server Monitor - v" } }
+          - any:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "web/css/frontend.css" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<span class=\"icon-gauge\"></span>eSM" } }
+          - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }

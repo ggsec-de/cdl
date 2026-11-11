@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:cnvd-2023-96945"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "McVie Safety Digital Management Platform - Arbitrary File Upload"
+  description: "Jiangsu Maiwei Intelligent Technology Co., Ltd. is a software technology service provider focusing on customized development of software products. There is a file upload vulnerability in Jiangsu Maiwei Intelligent Technology Co., Ltd.'s safe production digital management platform. An attacker can use this vulnerability to gain server permissions. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://blog.csdn.net/weixin_42628854/article/details/136036109"
+  tags: ["cnvd", "cnvd2023", "file-upload", "mcvie", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "High"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/Content/Plugins/uploader/FileChoose.html" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "选择文件" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "提交" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

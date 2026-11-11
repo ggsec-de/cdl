@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:pydio-cells-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Pydio Cells - Detect"
+  description: "Pydio Cells is an open-source document sharing and collaboration platform. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://pydio.com/"
+    - "https://github.com/pydio/cells"
+  tags: ["pydio", "cells", "tech", "detect", "storage", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Pydio Cells</title>" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "pydio.boot.min.js" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "\"ENDPOINT_S3_GATEWAY\":\"/io\"" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

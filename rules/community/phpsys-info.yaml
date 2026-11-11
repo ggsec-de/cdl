@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:phpsys-info"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "phpSysInfo Exposure"
+  description: "phpSysInfo: a customizable PHP script that displays information about your system nicely Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://phpsysinfo.github.io/phpsysinfo/"
+  tags: ["config", "exposure", "phpsysinfo", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/phpsysinfo/index.php?disp=bootstrap" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "phpSysInfo" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Hardware Information" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

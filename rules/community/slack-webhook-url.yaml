@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:slack-webhook-url"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Slack Webhook URL"
+  description: "Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/semgrep/semgrep-rules/blob/develop/generic/secrets/gitleaks/slack-webhook-url.go"
+    - "https://github.com/semgrep/semgrep-rules/blob/develop/generic/secrets/gitleaks/slack-webhook-url.yaml"
+    - "https://api.slack.com/messaging/webhooks"
+  tags: ["exposure", "token", "slack", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "https://hooks\\\\.slack\\\\.com/services/T[a-zA-Z0-9_]{8}/B[a-zA-Z0-9_]{8}/[a-zA-Z0-9_]{24}" } }
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "(https?:\\/\\/)?hooks.slack.com\\/(services|workflows)\\/[A-Za-z0-9+\\/]{43,46}" } }

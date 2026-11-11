@@ -1,0 +1,53 @@
+schema_version: 1
+id: "cortex.community:powerdns-monitor-exposure"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "PowerDNS Authoritative Server Monitor - Unauthenticated Exposure"
+  description: "Exposed PowerDNS Authoritative Server monitor allows unauthenticated access to operational stats, aiding reconnaissance but not zone takeover. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://docs.powerdns.com/authoritative/http-api/index.html"
+    - "https://doc.powerdns.com/md/common/logging/"
+    - "https://www.powerdns.com/powerdns-authoritative-server"
+  cwes: [200]
+  tags: ["exposure", "misconfig", "powerdns", "dns", "monitor", "unauth", "panel", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Medium"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/index.html" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "PowerDNS Authoritative Server Monitor" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "PowerDNS" } }
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Queries/second" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Remote server IP addresses" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Log Messages" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Variables" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Cache hitrate" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "PowerDNS Authoritative Server Monitor" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "PowerDNS" } }
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Queries/second" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Remote server IP addresses" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Log Messages" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Variables" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Cache hitrate" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:h2o-wave-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "H2O Wave ML Application Server - Detect"
+  description: "H2O Wave was detected. H2O Wave was an open-source Python development framework for building real-time interactive AI and ML web applications. The Wave server hosted applications built on the platform. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/h2oai/wave"
+    - "https://wave.h2o.ai/"
+  tags: ["panel", "h2o-wave", "h2o", "ml", "ai", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - any:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "h2o-wave" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "H2O Wave" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

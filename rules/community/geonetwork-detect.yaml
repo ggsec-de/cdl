@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:geonetwork-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "GeoNetwork - Detect"
+  description: "GeoNetwork is an open-source catalogue application for managing geospatial resources. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://geonetwork-opensource.org/"
+    - "https://github.com/geonetwork/core-geonetwork"
+  tags: ["tech", "detect", "geonetwork", "geospatial", "catalogue", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "ng-app=\"gn_search" } }
+      - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/geonetwork/static/" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

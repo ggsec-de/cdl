@@ -1,0 +1,41 @@
+schema_version: 1
+id: "cortex.community:security-onion-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Security Onion Panel - Detect"
+  description: "Security Onion is a free and open source Linux distribution for intrusion detection, security monitoring, and log management. It includes CyberChef, NetworkMiner, and many other security tools. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://securityonionsolutions.com/"
+    - "https://github.com/Security-Onion-Solutions/securityonion"
+  tags: ["panel", "security", "onion", "detect", "securityonionsolutions", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/login/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Security Onion" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Login to Security Onion" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Security Onion Solutions" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - any:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Security Onion" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Login to Security Onion" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Security Onion Solutions" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }

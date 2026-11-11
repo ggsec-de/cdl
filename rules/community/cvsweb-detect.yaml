@@ -1,0 +1,28 @@
+schema_version: 1
+id: "cortex.community:cvsweb-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "CVSweb - Detect"
+  description: "CVSweb is a WWW interface for CVS repositories with which you can browse a file hierarchy on your browser to view each file's revision history in a very handy manner. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://cvsweb.openbsd.org/"
+  tags: ["tech", "cvsweb", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - regex: { left: { ref: "steps.probe0.body" }, right: { value: "content=\".*CVSweb.*\"" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

@@ -1,0 +1,48 @@
+schema_version: 1
+id: "cortex.community:wp-yoast-seo-fpd"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "WordPress Yoast SEO - Full Path Disclosure"
+  description: "WordPress Yoast SEO plugin is vulnerable to full path disclosure via direct access to plugin files. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://wordpress.org/plugins/wordpress-seo/"
+  tags: ["wp", "wordpress", "wp-plugin", "fpd", "yoast", "seo", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wp-content/plugins/wordpress-seo/src/main.php" }
+  - id: "probe1"
+    request: { method: "GET", path: "/wp-content/plugins/wordpress-seo/admin/class-admin.php" }
+  - id: "probe2"
+    request: { method: "GET", path: "/wp-content/plugins/wordpress-seo/inc/class-wpseo-utils.php" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Fatal error" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/plugins/wordpress-seo" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Uncaught TypeError:" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Fatal error" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "/plugins/wordpress-seo" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Uncaught TypeError:" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Fatal error" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "/plugins/wordpress-seo" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Uncaught TypeError:" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }

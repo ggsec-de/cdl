@@ -1,0 +1,30 @@
+schema_version: 1
+id: "cortex.community:lean-value-listing"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "LVS Lean Value Management System Business - Directory Listing"
+  description: "Multiple systems of Hangzhou Jila Technology Co., Ltd. have been found to have directory traversal vulnerabilities. These vulnerabilities arise from the inadequate access controls implemented in the /Business/ directory. Malicious actors can potentially leverage these vulnerabilities to illicitly access sensitive information. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/Threekiii/Awesome-POC/blob/master/Web%E5%BA%94%E7%94%A8%E6%BC%8F%E6%B4%9E/%E5%90%89%E6%8B%89%E7%A7%91%E6%8A%80%20LVS%E7%B2%BE%E7%9B%8A%E4%BB%B7%E5%80%BC%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%20Business%20%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86%E6%BC%8F%E6%B4%9E.md"
+  tags: ["lean-value", "misconfig", "listing", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/Business/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/Business/" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "AgencytaskList.aspx" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

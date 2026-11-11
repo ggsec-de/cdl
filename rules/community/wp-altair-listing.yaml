@@ -1,0 +1,50 @@
+schema_version: 1
+id: "cortex.community:wp-altair-listing"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Altair WordPress theme v4.8 - Directory Listing"
+  description: "Searches for directories listing in the altair theme. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  tags: ["wordpress", "listing", "wp-theme", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/wp-content/themes/altair/modules/" }
+  - id: "probe1"
+    request: { method: "GET", path: "/wp-content/themes/altair/functions/" }
+  - id: "probe2"
+    request: { method: "GET", path: "/wp-content/themes/altair/images/flip/" }
+  - id: "probe3"
+    request: { method: "GET", path: "/wp-content/themes/altair/images/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Index of" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "wp-content/themes/altair" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Index of" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "wp-content/themes/altair" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Index of" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "wp-content/themes/altair" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Index of" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "wp-content/themes/altair" } }
+          - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }

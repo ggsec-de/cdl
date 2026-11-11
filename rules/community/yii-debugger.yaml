@@ -1,0 +1,96 @@
+schema_version: 1
+id: "cortex.community:yii-debugger"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "View Yii Debugger Information"
+  description: "Detects potential exposure to Yii Debugger information. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://yii2-framework.readthedocs.io/en/stable/guide/tool-debugger/"
+  tags: ["yii", "debug", "exposure", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/debug/default/view.html" }
+  - id: "probe1"
+    request: { method: "GET", path: "/debug/default/view" }
+  - id: "probe2"
+    request: { method: "GET", path: "/frontend/web/debug/default/view" }
+  - id: "probe3"
+    request: { method: "GET", path: "/web/debug/default/view" }
+  - id: "probe4"
+    request: { method: "GET", path: "/sapi/debug/default/view" }
+  - id: "probe5"
+    request: { method: "GET", path: "/debug/default" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<title>Yii Debugger</title>" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Status" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Route" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Log" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Time" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "Memory" } }
+              - contains: { left: { ref: "steps.probe0.body" }, right: { value: "DB" } }
+          - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "<title>Yii Debugger</title>" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Status" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Route" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Log" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Time" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "Memory" } }
+              - contains: { left: { ref: "steps.probe1.body" }, right: { value: "DB" } }
+          - eq: { left: { ref: "steps.probe1.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "<title>Yii Debugger</title>" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Status" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Route" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Log" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Time" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "Memory" } }
+              - contains: { left: { ref: "steps.probe2.body" }, right: { value: "DB" } }
+          - eq: { left: { ref: "steps.probe2.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "<title>Yii Debugger</title>" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Status" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Route" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Log" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Time" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "Memory" } }
+              - contains: { left: { ref: "steps.probe3.body" }, right: { value: "DB" } }
+          - eq: { left: { ref: "steps.probe3.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "<title>Yii Debugger</title>" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Status" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Route" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Log" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Time" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "Memory" } }
+              - contains: { left: { ref: "steps.probe4.body" }, right: { value: "DB" } }
+          - eq: { left: { ref: "steps.probe4.status" }, right: { value: 200 } }
+      - all:
+          - all:
+              - contains: { left: { ref: "steps.probe5.body" }, right: { value: "<title>Yii Debugger</title>" } }
+              - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Status" } }
+              - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Route" } }
+              - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Log" } }
+              - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Time" } }
+              - contains: { left: { ref: "steps.probe5.body" }, right: { value: "Memory" } }
+              - contains: { left: { ref: "steps.probe5.body" }, right: { value: "DB" } }
+          - eq: { left: { ref: "steps.probe5.status" }, right: { value: 200 } }

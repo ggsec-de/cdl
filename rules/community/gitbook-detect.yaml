@@ -1,0 +1,32 @@
+schema_version: 1
+id: "cortex.community:gitbook-detect"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "GitBook Detect"
+  description: "GitBook is a collaborative documentation tool that allows anyone to document anything—such as products and APIs—and share knowledge through a user-friendly online platform. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://www.gitbook.com/"
+  tags: ["tech", "gitbook", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    any:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "gitbook.page.hasChanged" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "<meta name=\"generator\" content=\"GitBook" } }
+      - any:
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "<title>.*[Gg]it[bB]ook</title>" } }
+          - regex: { left: { ref: "steps.probe0.body" }, right: { value: "<title>.*· [Gg]it[bB]ook.*</title>" } }

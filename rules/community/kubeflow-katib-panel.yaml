@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:kubeflow-katib-panel"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Kubeflow Katib Panel - Detect"
+  description: "Kubeflow Katib, a Kubernetes-native project for automated machine learning (AutoML) that performs hyperparameter tuning, early stopping, and neural architecture search, was detected. Its web UI is normally served under the /katib/ path behind the Kubeflow Central Dashboard, fronted by an Istio/OIDC auth proxy, so unauthenticated exposure is uncommon but was identified on this instance. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://github.com/kubeflow/katib"
+    - "https://www.kubeflow.org/docs/components/katib/"
+  tags: ["panel", "kubeflow-katib", "ml", "ai", "mlops", "detect", "discovery", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Info"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/katib/" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "base href=\"/katib/\"" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "/katib/static/" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }

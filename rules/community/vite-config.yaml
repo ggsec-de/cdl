@@ -1,0 +1,31 @@
+schema_version: 1
+id: "cortex.community:vite-config"
+rule_version: "1.0.0"
+requires:
+  engine_api: 1
+  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+info:
+  name: "Vite Configuration - File Exposure"
+  description: "The vite.config.js file is used to customize the behavior of Vite and specify various settings for your project. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
+  references:
+    - "https://vitejs.dev/config/"
+  tags: ["devops", "exposure", "files", "vite", "config", "vuln", "nuclei", "auto-ported", "signal"]
+  remediation: "See the referenced advisory / template source for remediation."
+finding:
+  sink_type: "VULNERABLE_COMPONENT"
+  impact: "INFORMATION_DISCLOSURE"
+  severity: "Low"
+  root_cause: "nuclei-ported-signal"
+execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
+steps:
+  - id: "probe0"
+    request: { method: "GET", path: "/vite.config.js" }
+proof:
+  kind: "signal.v1"
+  assertions:
+    all:
+      - all:
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "export default defineConfig" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "plugins:" } }
+          - contains: { left: { ref: "steps.probe0.body" }, right: { value: "laravel" } }
+      - eq: { left: { ref: "steps.probe0.status" }, right: { value: 200 } }
