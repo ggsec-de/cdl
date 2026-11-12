@@ -80,6 +80,12 @@ rules/official/     curated, product-specific rules, with offline test fixtures
 rules/community/    rules ported from other open catalogs (signal-only; see its README)
 ```
 
+`rules/official/` holds two kinds of rule. Some **demonstrate** a weakness — a file read or a command
+execution the engine takes part in — and report *Confirmed*. Most **detect an affected version**: they match a
+product's own version banner and report *Likely* through a `signal.v1` proof. Both kinds are product-specific
+and ship with a positive and a negative fixture; a version match is evidence that a target is affected, not a
+proof that it is exploitable.
+
 ## Try it
 
 With the GGSec Cortex command line available as `ggsec`:
