@@ -21,7 +21,7 @@ Rules that hold for every profile:
   outcome is `Undetermined` and the rule ends `Inconclusive` — never a clean `NoMatch`.
 - **Absence needs a complete response.** "The marker is not there" is only decided on a response that was
   not truncated.
-- **A regex error or timeout is never a match.**
+- **A regex error or timeout decides nothing.** It is neither a match nor evidence that something is absent.
 - **Where a rule comes from does not matter.** A signed, official rule gets exactly the same grading as a
   local one.
 
@@ -85,7 +85,7 @@ The engine confirms when the baseline completed, the marker is **absent** from t
 | Marker absent in baseline, present in a probe | `Confirmed` |
 | Marker already present in the baseline | `NoMatch` — the page shows it anyway, nothing was read |
 | Marker absent in every probe | `NoMatch` |
-| Baseline did not complete, or no probe completed, or a probe was truncated before the marker | `Undetermined` |
+| Baseline did not complete or was truncated, or no probe completed, or a probe was truncated before the marker | `Undetermined` |
 
 The claim is a **file read**. It is not, by itself, code execution; set `impact` to `FILE_READ` or
 `INFORMATION_DISCLOSURE` (the validator warns otherwise).
@@ -113,18 +113,18 @@ For every run the engine picks two random integers and makes them available as `
   it is only stored or echoed, or a request without the expression.
 
 The engine confirms when the product appears in the readback, does **not** appear in the control, and was
-**not** present in what the rule sent.
+**not** present in anything the rule sent during the run.
 
 | Situation | Outcome |
 |---|---|
-| Product in readback, not in control, not in the sent request | `Confirmed` |
+| Product in readback, not in control, not in any request of the run | `Confirmed` |
 | Product not in the readback | `NoMatch` |
 | Product also in the control | `NoMatch` — the value is there regardless |
-| Product was in the sent request | `NoMatch` — an echo, not an evaluation |
-| Readback or control did not complete, or readback truncated before the value | `Undetermined` |
+| Product was in a request the rule sent, in any step | `NoMatch` — an echo, not an evaluation |
+| Readback or control did not complete, or was truncated before the value could be seen | `Undetermined` |
 
 Send the operands, never the result: a rule that computes the product itself (for instance with `mul`) and
-sends it proves nothing and is rejected in review.
+sends it, in any step, ends `NoMatch`.
 
 The claim is **server-side expression evaluation**. That is often the first step towards code execution, but
 this profile does not show an operating-system command ran; use `command_output_readback.v1` for that.
@@ -158,15 +158,16 @@ user, for example).
 - `control` — a step whose response must not match the marker.
 
 The engine confirms when the readback contains the token **and** matches the marker, the control does **not**
-match the marker, and the matched output was **not** present in what the rule sent.
+match the marker, and the matched output was **not** present in anything the rule sent during the run.
 
 | Situation | Outcome |
 |---|---|
-| Token and marker in readback; marker absent from control and from the sent request | `Confirmed` |
+| Token and marker in readback; marker absent from control and from every request of the run | `Confirmed` |
 | Token missing from the readback | `NoMatch` — the output is unrelated or stale |
 | Token present but marker missing | `NoMatch` — the request was reflected, nothing ran |
 | Marker also in the control | `NoMatch` |
-| Readback or control did not complete, or readback truncated | `Undetermined` |
+| The matched output was in a request the rule sent, in any step | `NoMatch` — stored or reflected, not produced |
+| Readback or control did not complete, or was truncated before the marker could be seen | `Undetermined` |
 
 The step that carries the token and the step that reads the output may be different steps: a rule can start a
 job with one request and collect its output with a later one, using

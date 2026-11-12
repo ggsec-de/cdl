@@ -185,8 +185,11 @@ against the request budget. Discovery being read-only does not by itself permit 
 those still need `execution.side_effects`.
 
 **`preconditions`** is a single [condition](#51-conditions) over discovery results (a banner, a fingerprint).
-It decides whether the rule applies. A false or undetermined gate makes the whole rule `NotApplicable` and no
-main request is sent — a product-specific rule never probes an unrelated target.
+It decides whether the rule applies. When the gate does not hold, the whole rule is `NotApplicable` and
+nothing further is sent — neither the main steps nor cleanup — so a product-specific rule never probes an
+unrelated target. This includes a gate that cannot be decided because the fact it asks about is simply
+absent, such as a header the target does not send. If a discovery request got no answer at all (a timeout, a
+network error), the engine does not know whether the rule applies, and the rule ends `Inconclusive` instead.
 
 ---
 
@@ -385,9 +388,10 @@ The challenge values a proof provides (`challenge.a`, `challenge.b`, `challenge.
 ## 9. Cleanup
 
 `cleanup` is an ordered list of steps that compensate for what a state-changing rule did. It is **not** a
-transactional rollback. Cleanup runs after the main steps whatever happened to them — success, no match,
-timeout, error or cancellation — under its own time budget (15 s) and its own request reserve (8), in the
-same scope and auth context. A cleanup step has one `request` and an optional `expect` that checks the
+transactional rollback. Once a main step has been attempted, cleanup runs whatever happened next — success,
+no match, timeout, error or cancellation — under its own time budget (15 s) and its own request reserve (8),
+in the same scope and auth context. If no main step was attempted (the rule was `NotApplicable`, for
+example), cleanup does not run. A cleanup step has one `request` and an optional `expect` that checks the
 compensation actually took effect. A finding is finalized after cleanup, so the report can show the residual
 state when cleanup did not succeed.
 
