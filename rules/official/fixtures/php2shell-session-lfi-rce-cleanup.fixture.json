@@ -1,0 +1,10 @@
+{
+  "_comment": "Negative fixture: the include chain is present (the /etc/passwd gate passes) but session.upload_progress.cleanup=On removed the session file before the readback — the readback include yields a 'Failed to open stream' warning with no command output, so command_output_readback.v1 stays NoMatch ('not exploitable as configured here'). Order matches the positive: the control (sess_missing) is listed before the readback (sess_ggsec...).",
+  "responses": [
+    { "method": "GET", "pathContains": "page=%2Fetc%2Fpasswd", "status": 200, "body": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\n" },
+    { "method": "GET", "pathContains": "sess_missing", "status": 200, "body": "<br />\n<b>Warning</b>:  include(/tmp/sessions/sess_missingggsecphp2shell000000000000): Failed to open stream\n" },
+    { "method": "GET", "pathContains": "sess_ggsecphp2shell000000000000", "status": 200, "body": "<br />\n<b>Warning</b>:  include(/tmp/sessions/sess_ggsecphp2shell000000000000): Failed to open stream (session.upload_progress.cleanup=On removed it)\n" },
+    { "method": "POST", "path": "/index.php", "status": 200, "headers": { "Content-Type": "application/json" }, "body": "{\"ok\":true}" }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

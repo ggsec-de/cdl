@@ -18,7 +18,7 @@ info:
     does not exist) and absent from what we sent. If any link of the chain is missing, the rule reports NotApplicable
     or NoMatch — never Confirmed.
 
-    The three variables below describe the ENGAGEMENT, not the CVE: point upload_route at an endpoint that runs
+    The variables below describe the ENGAGEMENT, not the CVE: point upload_route at an endpoint that runs
     session_start(), lfi_route/lfi_param at the include the application exposes, and save_path/sid at the target's
     session store. With the defaults it evaluates the php2shell lab only; against anything else the include probe
     fails the preconditions and the rule is NotApplicable. session.upload_progress.cleanup=On (the php.ini default)
@@ -43,7 +43,7 @@ finding:
   impact: "RCE"
   severity: "Critical"
   # AC:H: exploitation needs the application-side include as well as the PHP-core flaw, so this is not a
-  # fire-and-forget network exploit like the Solr Velcocity template.
+  # fire-and-forget network exploit like the Solr Velocity template.
   cvss_vector: "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
   root_cause: "session-upload-progress-filename-injection-chained-to-application-include"
 execution:

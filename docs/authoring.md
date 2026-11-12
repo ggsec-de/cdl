@@ -283,7 +283,9 @@ ggsec rules test examples/challenge-arithmetic.yaml --fixture examples/fixtures/
 
 There are four confirming profiles — for file reads, expression evaluation, command execution, and
 out-of-band callbacks. [Proof profiles](proof-profiles.md) explains each, what it claims, and how to choose.
-The rules in [`rules/official/`](../rules/official/) are worked examples of all of them.
+The rules in [`rules/official/`](../rules/official/) are worked examples of the file-read and command-execution
+profiles; [`examples/challenge-arithmetic.yaml`](../examples/challenge-arithmetic.yaml) is one for expression
+evaluation; the out-of-band profile is described, with its shape, in [proof profiles](proof-profiles.md).
 
 ## 8. Rules that change something
 

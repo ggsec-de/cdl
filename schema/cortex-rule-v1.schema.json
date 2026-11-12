@@ -16,7 +16,25 @@
       "required": ["engine_api", "capabilities"],
       "properties": {
         "engine_api": { "const": 1 },
-        "capabilities": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "http.standard.v1",
+              "http.preserve_raw_path.v1",
+              "matchers.basic.v1",
+              "proof.signal.v1",
+              "proof.file_read_differential.v1",
+              "proof.expression_evaluation.v1",
+              "proof.command_output_readback.v1",
+              "proof.oob_interaction.v1",
+              "oob.dns.v1",
+              "oob.http.v1"
+            ]
+          }
+        }
       }
     },
     "info": {

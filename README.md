@@ -76,7 +76,7 @@ its behaviour can be checked in CI — including the case where it must stay qui
 docs/               guides and the language reference
 schema/             JSON Schema for a CDL rule
 examples/           small, self-contained rules with fixtures - the best place to start reading
-rules/official/     curated rules with confirming proofs, each with test fixtures
+rules/official/     curated, product-specific rules, with offline test fixtures
 rules/community/    rules ported from other open catalogs (signal-only; see its README)
 ```
 

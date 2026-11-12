@@ -1,0 +1,9 @@
+{
+  "_comment": "Negative fixture: creating a note still succeeds, but reading it back anonymously is denied (403) — the access-control weakness is absent, so signal.v1 stays NoMatch. Cleanup still removes the created note.",
+  "responses": [
+    { "method": "POST",   "path": "/demo/notes",        "status": 201, "body": "{\"id\":\"n-1001\"}" },
+    { "method": "GET",    "path": "/demo/notes/n-1001", "status": 403, "body": "{\"error\":\"authentication required\"}" },
+    { "method": "DELETE", "path": "/demo/notes/n-1001", "status": 204, "body": "" }
+  ],
+  "default": { "status": 404, "body": "not found" }
+}

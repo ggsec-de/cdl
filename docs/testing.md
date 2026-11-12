@@ -115,3 +115,10 @@ its input. The second is the one that catches a proof that is too easy to satisf
 A fixture shows that the rule's logic is right for the responses you wrote. It does not show that a real
 target answers that way. Before a rule is published it should also be run against a real, deliberately
 vulnerable instance in a lab — and against a patched one.
+
+The offline harness routes each request to a canned response by its method, path and body. A proof whose
+negative control and its read-back are the **same** request — told apart only by a change of server state
+between them, as when a rule creates a resource and then reads it back at the same URL — cannot yet be
+expressed as a fixture, and is verified against a live instance instead. The
+[`spring-cloud-gateway-cve-2022-22947`](../rules/official/spring-cloud-gateway-cve-2022-22947.yaml) rule is
+the one shipped example of this.
